@@ -1,12 +1,11 @@
 import streamlit as st
-import streamlit.components.v1 as components
 from collections import deque
 
 # Set konfig halaman Streamlit agar mendukung layout luas
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF (TETAP SEPERTI SEMULA)
+# 1. STYLE CSS RESPONSIF & MODEL D-PAD BARU
 # ==========================================
 st.markdown("""
     <style>
@@ -28,6 +27,55 @@ st.markdown("""
         }
     }
 
+    /* CONTAINER D-PAD MODEL BARU (CSS GRID) */
+    .dpad-grid-container {
+        display: grid;
+        grid-template-columns: repeat(3, 75px);
+        grid-template-rows: repeat(3, 75px);
+        gap: 6px;
+        justify-content: center;
+        align-content: center;
+        margin: 20px auto;
+        background: rgba(30, 41, 59, 0.4);
+        padding: 15px;
+        border-radius: 50%;
+        max-width: 260px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    /* Memaksa Tombol Streamlit Menjadi Bagian dari D-Pad Silang */
+    .dpad-grid-container div[data-testid="stButton"] {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .dpad-grid-container button {
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: #f8fafc !important;
+        border: 2px solid #1d4ed8 !important;
+        font-size: 1.4rem !important;
+        font-weight: bold !important;
+        border-radius: 12px !important;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3) !important;
+        transition: all 0.1s ease !important;
+    }
+    .dpad-grid-container button:active {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+        transform: scale(0.95) !important;
+    }
+    
+    /* Penempatan Grid Silang */
+    .dpad-up { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-center-space { grid-column: 2; grid-row: 2; background: #1e293b; border-radius: 8px; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 3; }
+
+    /* STYLE MATRIKS PUZZLE */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -68,7 +116,7 @@ st.markdown("""
         text-align: center;
         word-break: break-word;
     }
-    .stButton>button {
+    .bottom-controls button {
         padding: 0.5rem 0.2rem !important;
         font-weight: bold !important;
     }
@@ -84,7 +132,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan D-Pad di layar, Arrow Keys, atau tombol WASD untuk bermain!"
+    st.session_state.status_text_1 = "Gunakan D-Pad asli di layar atau tekan tombol kontrol Anda!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -119,12 +167,6 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# Fungsi pemicu balik interaksi state internal
-if "internal_move" in st.session_state and st.session_state.internal_move != "":
-    arah_aksi = st.session_state.internal_move
-    st.session_state.internal_move = ""
-    geser_manual(arah_aksi)
-
 def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
     st.session_state.status_text_1 = "Game di-reset ke Kondisi Awal Acak PPT."
@@ -158,6 +200,30 @@ def aksi_tekan_BFS():
         st.session_state.status_text_2 = ""
 
 # ==========================================
+# 4. KONTROL DESKTOP KEYBOARD (WASD & ARROWS)
+# ==========================================
+# Script ultra-ringan khusus menangkap ketukan keyboard tanpa memakan resource halaman luar
+st.components.v1.html("""
+    <script>
+    window.parent.document.onkeydown = function(e) {
+        let key = e.key.toLowerCase();
+        let targetBtn = null;
+        
+        if (key === 'arrowup' || key === 'w') targetBtn = "▲";
+        else if (key === 'arrowdown' || key === 's') targetBtn = "▼";
+        else if (key === 'arrowleft' || key === 'a') targetBtn = "◀";
+        else if (key === 'arrowright' || key === 'd') targetBtn = "▶";
+        
+        if(targetBtn) {
+            e.preventDefault();
+            const btn = Array.from(window.parent.document.querySelectorAll('button')).find(el => el.innerText.trim() === targetBtn);
+            if(btn) btn.click();
+        }
+    };
+    </script>
+""", height=0)
+
+# ==========================================
 # 5. RENDER LAYOUT UTAMA
 # ==========================================
 st.title("🧩 8-Puzzle BFS Solver")
@@ -168,85 +234,37 @@ col1, col2 = st.columns([1, 1], gap="large")
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
     # ----------------------------------------------------
-    # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
+    # MODEL BARU: D-PAD NYATA BERBASIS TOMBOL PYTHON
     # ----------------------------------------------------
-    # f-string dihapus dan diganti string biasa murni agar tidak memicu SyntaxError Python
-    components.html("""
-    <div class="dpad-wrapper">
-        <div class="dpad-container">
-            <button class="dpad-btn up" id="ui-up" title="Atas">
-                <svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
-            </button>
-            <button class="dpad-btn left" id="ui-left" title="Kiri">
-                <svg viewBox="0 0 24 24"><path d="M4 12l8-8v6h8v4h-8v6z"/></svg>
-            </button>
-            <div class="dpad-center"></div>
-            <button class="dpad-btn right" id="ui-right" title="Kanan">
-                <svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg>
-            </button>
-            <button class="dpad-btn down" id="ui-down" title="Bawah">
-                <svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg>
-            </button>
-        </div>
-    </div>
-
-    <form id="hidden-form" style="display:none;">
-        <input type="text" id="dir-input" name="internal_move">
-    </form>
-
-    <style>
-    .dpad-wrapper { display: flex; justify-content: center; align-items: center; margin: 15px auto; }
-    .dpad-container {
-        display: grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap: 2px;
-        background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 50%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
-    }
-    .dpad-btn {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 2px solid #1d4ed8;
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
-        display: flex; align-items: center; justify-content: center; transition: all 0.1s ease;
-    }
-    .dpad-btn svg { width: 40px; height: 40px; fill: #f8fafc; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); }
-    .up { grid-column: 2; grid-row: 1; border-radius: 12px 12px 0 0; position: relative;}
-    .left { grid-column: 1; grid-row: 2; border-radius: 12px 0 0 12px; position: relative;}
-    .right { grid-column: 3; grid-row: 2; border-radius: 0 12px 12px 0; position: relative;}
-    .down { grid-column: 2; grid-row: 3; border-radius: 0 0 12px 12px; position: relative;}
-    .dpad-center { grid-column: 2; grid-row: 2; background: #1e293b; border: none; }
-    .dpad-btn:active { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); transform: scale(0.95); }
-    </style>
-
-    <script>
-    const executeMove = (direction) => {
-        window.parent.postMessage({
-            type: 'streamlit:set_widget_value',
-            key: 'internal_move',
-            value: direction
-        }, '*');
-        
-        // Memaksa sinkronisasi internal dengan menargetkan tombol fisik apa saja yang ada di layar luar
-        const anyBtn = window.parent.document.querySelector('button');
-        if(anyBtn) { anyBtn.focus(); anyBtn.blur(); }
-    };
-
-    document.getElementById('ui-up').onclick = () => executeMove('Atas');
-    document.getElementById('ui-left').onclick = () => executeMove('Kiri');
-    document.getElementById('ui-right').onclick = () => executeMove('Kanan');
-    document.getElementById('ui-down').onclick = () => executeMove('Bawah');
-
-    // Menangkap pergerakan keyboard WASD & Arrow Key
-    window.parent.document.onkeydown = function(e) {
-        let key = e.key.toLowerCase();
-        if (key === 'arrowup' || key === 'w') { e.preventDefault(); executeMove('Atas'); }
-        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); executeMove('Bawah'); }
-        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); executeMove('Kiri'); }
-        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); executeMove('Kanan'); }
-    };
-    </script>
-    """, height=290)
+    # Struktur visual luar tidak berubah, namun tombol ini dijamin 100% responsif karena diproses murni oleh Python
+    st.markdown('<div class="dpad-grid-container">', unsafe_allow_html=True)
+    
+    st.markdown('<div class="dpad-up">', unsafe_allow_html=True)
+    st.button("▲", on_click=geser_manual, args=('Atas',), key="btn_p_up")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="dpad-left">', unsafe_allow_html=True)
+    st.button("◀", on_click=geser_manual, args=('Kiri',), key="btn_p_left")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="dpad-center-space"></div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="dpad-right">', unsafe_allow_html=True)
+    st.button("▶", on_click=geser_manual, args=('Kanan',), key="btn_p_right")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="dpad-down">', unsafe_allow_html=True)
+    st.button("▼", on_click=geser_manual, args=('Bawah',), key="btn_p_down")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("---")
+    st.markdown('<div class="bottom-controls">', unsafe_allow_html=True)
     cc_bt1, cc_bt2 = st.columns(2)
     with cc_bt1: st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
     with cc_bt2: st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (KANAN)
 with col2:
@@ -268,9 +286,6 @@ with col2:
     
     st.markdown(html_matriks, unsafe_allow_html=True)
     st.write("")
-
-# Menyiapkan variabel penampung state pemicu
-st.session_state["internal_move"] = st.session_state.get("internal_move", "")
 
 # ==========================================
 # 6. STATUS BAWAH
