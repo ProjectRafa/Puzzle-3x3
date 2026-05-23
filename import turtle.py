@@ -23,7 +23,7 @@ st.markdown("""
     @media (min-width: 769px) {
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: row-reverse !important; /* Membalik urutan agar col2 (D-Pad) di kiri */
+            flex-direction: row-reverse !important; /* col2 (D-Pad) di kiri */
             align-items: center !important;
         }
     }
@@ -32,11 +32,11 @@ st.markdown("""
     @media (max-width: 768px) {
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: column !important; /* Susunan standar: col1 (Puzzle) lalu col2 (D-Pad) */
+            flex-direction: column !important; /* col1 (Puzzle) di atas, col2 (D-Pad) di bawah */
         }
     }
 
-    /* Sembunyikan tombol sistem jembatan */
+    /* Sembunyikan tombol jembatan sistem secara total dari pandangan */
     .hidden-control-container {
         position: absolute;
         width: 0px;
@@ -144,24 +144,24 @@ def aksi_tekan_BFS():
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
-# Tombol jembatan tersembunyi
+# Tombol jembatan dikosongkan tulisan teksnya (""), diidentifikasi via parameter key unik
 st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
-st.button("HIDDEN_UP", on_click=geser_manual, args=('Atas',), key="h_up")
-st.button("HIDDEN_DOWN", on_click=geser_manual, args=('Bawah',), key="h_down")
-st.button("HIDDEN_LEFT", on_click=geser_manual, args=('Kiri',), key="h_left")
-st.button("HIDDEN_RIGHT", on_click=geser_manual, args=('Kanan',), key="h_right")
+st.button("", on_click=geser_manual, args=('Atas',), key="p_move_up")
+st.button("", on_click=geser_manual, args=('Bawah',), key="p_move_down")
+st.button("", on_click=geser_manual, args=('Kiri',), key="p_move_left")
+st.button("", on_click=geser_manual, args=('Kanan',), key="p_move_right")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Urutan kolom: col1 (Puzzle), col2 (D-Pad)
 col1, col2 = st.columns([1.2, 1], gap="large")
 
 with col1:
-    # PUZZLE (Akan di ATAS pada HP)
+    # PUZZLE (Akan berada di ATAS pada layar HP)
     with st.expander("ℹ️ Panduan Kontrol", expanded=False):
         st.write("Desktop: WASD / Arrow Keys. HP: Klik D-Pad di bawah.")
     
     st.write("")
-    # Render Matriks
+    # Render Matriks Ubin
     html_matriks = "<div class='tile-container'>"
     for angka in st.session_state.current_state:
         if angka == 0: html_matriks += "<div class='tile-empty'></div>"
@@ -170,7 +170,7 @@ with col1:
     st.markdown(html_matriks, unsafe_allow_html=True)
 
 with col2:
-    # D-PAD (Akan di SAMPING pada Desktop, di BAWAH pada HP)
+    # D-PAD (Akan berada di SAMPING KIRI pada Desktop, di BAWAH PUZZLE pada HP)
     components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
@@ -200,21 +200,30 @@ with col2:
         .dpad-btn:active { transform: scale(0.9); opacity: 0.8; }
     </style>
     <script>
-        function pemicu(nama) {
-            const btns = window.parent.document.querySelectorAll('button');
-            for (let b of btns) { if (b.innerText.trim() === nama) { b.click(); break; } }
+        // Mencari elemen berdasarkan ID Tombol Key unik Streamlit (Aman dari bentrok tombol kosong)
+        function pemicu(keyName) {
+            const btn = window.parent.document.querySelector(`button[key="${keyName}"]`);
+            if (btn) {
+                btn.click();
+            } else {
+                // Cadangan jika pembungkus key standar terenkripsi oleh react shadow
+                const semuaTombol = window.parent.document.querySelectorAll('.hidden-control-container button');
+                const urutan = {'p_move_up': 0, 'p_move_down': 1, 'p_move_left': 2, 'p_move_right': 3};
+                if(semuaTombol.length > 0) semuaTombol[urutan[keyName]].click();
+            }
         }
-        document.getElementById('ui-up').onclick = () => pemicu('HIDDEN_UP');
-        document.getElementById('ui-down').onclick = () => pemicu('HIDDEN_DOWN');
-        document.getElementById('ui-left').onclick = () => pemicu('HIDDEN_LEFT');
-        document.getElementById('ui-right').onclick = () => pemicu('HIDDEN_RIGHT');
+        
+        document.getElementById('ui-up').onclick = () => pemicu('p_move_up');
+        document.getElementById('ui-down').onclick = () => pemicu('p_move_down');
+        document.getElementById('ui-left').onclick = () => pemicu('p_move_left');
+        document.getElementById('ui-right').onclick = () => pemicu('p_move_right');
         
         window.parent.document.onkeydown = function(e) {
             let k = e.key.toLowerCase();
-            if (k === 'arrowup' || k === 'w') { e.preventDefault(); pemicu('HIDDEN_UP'); }
-            if (k === 'arrowdown' || k === 's') { e.preventDefault(); pemicu('HIDDEN_DOWN'); }
-            if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pemicu('HIDDEN_LEFT'); }
-            if (k === 'arrowright' || k === 'd') { e.preventDefault(); pemicu('HIDDEN_RIGHT'); }
+            if (k === 'arrowup' || k === 'w') { e.preventDefault(); pemicu('p_move_up'); }
+            if (k === 'arrowdown' || k === 's') { e.preventDefault(); pemicu('p_move_down'); }
+            if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pemicu('p_move_left'); }
+            if (k === 'arrowright' || k === 'd') { e.preventDefault(); pemicu('p_move_right'); }
         };
     </script>
     """, height=260)
