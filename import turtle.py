@@ -144,7 +144,7 @@ def aksi_tekan_BFS():
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
-# Tombol jembatan dikosongkan tulisan teksnya (""), diidentifikasi via parameter key unik
+# Tombol jembatan kosong diidentifikasi via parameter key unik
 st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
 st.button("", on_click=geser_manual, args=('Atas',), key="p_move_up")
 st.button("", on_click=geser_manual, args=('Bawah',), key="p_move_down")
@@ -158,7 +158,8 @@ col1, col2 = st.columns([1.2, 1], gap="large")
 with col1:
     # PUZZLE (Akan berada di ATAS pada layar HP)
     with st.expander("ℹ️ Panduan Kontrol", expanded=False):
-        st.write("Desktop: WASD / Arrow Keys. HP: Klik D-Pad di bawah.")
+        st.write("Desktop: **WASD** / Arrow Keys.")
+        st.write("HP: Klik D-Pad di bawah.")
     
     st.write("")
     # Render Matriks Ubin
@@ -200,13 +201,11 @@ with col2:
         .dpad-btn:active { transform: scale(0.9); opacity: 0.8; }
     </style>
     <script>
-        // Mencari elemen berdasarkan ID Tombol Key unik Streamlit (Aman dari bentrok tombol kosong)
         function pemicu(keyName) {
             const btn = window.parent.document.querySelector(`button[key="${keyName}"]`);
             if (btn) {
                 btn.click();
             } else {
-                // Cadangan jika pembungkus key standar terenkripsi oleh react shadow
                 const semuaTombol = window.parent.document.querySelectorAll('.hidden-control-container button');
                 const urutan = {'p_move_up': 0, 'p_move_down': 1, 'p_move_left': 2, 'p_move_right': 3};
                 if(semuaTombol.length > 0) semuaTombol[urutan[keyName]].click();
