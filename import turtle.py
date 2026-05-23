@@ -126,13 +126,11 @@ def geser_manual(arah):
             return
 
 # ==========================================
-# 4. KONTROL QUERY PARAMETER (PENGGANTI TOMBOL HIDDEN)
+# 4. KONTROL QUERY PARAMETER
 # ==========================================
-# Membaca pergerakan langsung dari URL/Query parameter yang dikirim oleh JavaScript
 query_params = st.query_params
 if "move" in query_params:
     arah_pilihan = query_params["move"]
-    # Hapus parameter segera agar tidak terjadi pergeseran terus-menerus saat refresh
     st.query_params.clear()
     geser_manual(arah_pilihan)
     st.rerun()
@@ -177,15 +175,8 @@ st.write("---")
 
 col1, col2 = st.columns([1, 1], gap="large")
 
-# KELOMPOK KONTROL MANUAL & PANDUAN
+# KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
-    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
-        st.markdown("### KONTROL GAME:")
-        st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di bawah.")
-
-    st.write("")
-
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
@@ -229,7 +220,6 @@ with col1:
     </style>
 
     <script>
-    // Fungsi untuk mengirim perintah gerak langsung ke backend Python Streamlit tanpa tombol bantu
     const sendMove = (direction) => {
         const url = new URL(window.parent.location.href);
         url.searchParams.set("move", direction);
@@ -241,7 +231,6 @@ with col1:
     document.getElementById('ui-right').onclick = () => sendMove('Kanan');
     document.getElementById('ui-down').onclick = () => sendMove('Bawah');
 
-    // Listener Keyboard (Arrow Keys & WASD) langsung di dalam scope penangkap utama
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); sendMove('Atas'); }
@@ -253,15 +242,21 @@ with col1:
     """, height=290)
 
     st.write("---")
-    # Tombol Reset & AI Solver diletakkan rapi di bawah D-Pad kustom Anda
     cc_bt1, cc_bt2 = st.columns(2)
     with cc_bt1: st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
     with cc_bt2: st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
 
-# KELOMPOK VISUALISASI MATRIKS PUZZLE
+# KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (KANAN)
 with col2:
-    st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>TAMPILAN PUZZLE</h3>", unsafe_allow_html=True)
-    
+    # "Lihat Panduan Kontrol Game" dipindahkan ke sini (di atas puzzle)
+    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
+        st.markdown("### KONTROL GAME:")
+        st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
+        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di samping kiri.")
+        
+    st.write("")
+
+    # Tampilan Ubin Matriks Puzzle
     html_matriks = "<div class='tile-container'>"
     for angka in st.session_state.current_state:
         if angka == 0:
