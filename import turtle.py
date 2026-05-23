@@ -6,7 +6,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF
+# 1. STYLE CSS RESPONSIF (STRUKTUR REVERSE UNTUK DESKTOP)
 # ==========================================
 st.markdown("""
     <style>
@@ -21,10 +21,20 @@ st.markdown("""
         color: #E2E8F0;
     }
     
+    /* DESKTOP: Paksa Col2 (D-Pad) ke kiri, Col1 (Puzzle) ke kanan */
+    @media (min-width: 769px) {
+        [data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row-reverse !important;
+            align-items: center !important;
+        }
+    }
+
+    /* HP/MOBILE: Aliran normal dari atas ke bawah (Puzzle dulu, baru D-Pad) */
     @media (max-width: 768px) {
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: column-reverse !important;
+            flex-direction: column !important;
         }
     }
 
@@ -73,7 +83,7 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* Trik CSS Gaib: Lenyapkan tombol pemicu internal dari pandangan mata */
+    /* Lenyapkan tombol pemicu internal dari pandangan mata */
     div.hidden-trigger {
         display: none !important;
     }
@@ -124,7 +134,6 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# Fungsi callback tombol asli semula
 def tekan_Atas():  geser_manual('Atas')
 def tekan_Bawah(): geser_manual('Bawah')
 def tekan_Kiri():  geser_manual('Kiri')
@@ -163,27 +172,43 @@ def aksi_tekan_BFS():
         st.session_state.status_text_2 = ""
 
 # ==========================================
-# 5. RENDER LAYOUT UTAMA
+# 4. RENDER LAYOUT UTAMA
 # ==========================================
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
+# Tombol jembatan gaib ditaruh di root atas agar aman diakses JS
+st.markdown('<div class="hidden-trigger">', unsafe_allow_html=True)
+st.button("Atas", on_click=tekan_Atas, key="sys_up")
+st.button("Kiri", on_click=tekan_Kiri, key="sys_left")
+st.button("Kanan", on_click=tekan_Kanan, key="sys_right")
+st.button("Bawah", on_click=tekan_Bawah, key="sys_down")
+st.markdown('</div>', unsafe_allow_html=True)
+
 col1, col2 = st.columns([1, 1], gap="large")
 
-# KELOMPOK KONTROL MANUAL (KIRI)
+# KELOMPOK 1: VISUALISASI MATRIKS PUZZLE & PANDUAN (Atas di HP, Kanan di Desktop)
 with col1:
-    # Tombol pemicu asli ditaruh di sini agar dibaca mesin Streamlit, 
-    # namun dibungkus class CSS khusus agar tidak tampil merusak estetika visual.
-    st.markdown('<div class="hidden-trigger">', unsafe_allow_html=True)
-    st.button("Atas", on_click=tekan_Atas, key="sys_up")
-    st.button("Kiri", on_click=tekan_Kiri, key="sys_left")
-    st.button("Kanan", on_click=tekan_Kanan, key="sys_right")
-    st.button("Bawah", on_click=tekan_Bawah, key="sys_down")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
+        st.markdown("### KONTROL GAME:")
+        st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
+        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di bawah.")
+        
+    st.write("")
 
-    # ----------------------------------------------------
-    # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
-    # ----------------------------------------------------
+    # Tampilan Ubin Matriks Puzzle
+    html_matriks = "<div class='tile-container'>"
+    for angka in st.session_state.current_state:
+        if angka == 0:
+            html_matriks += "<div class='tile-empty'></div>"
+        else:
+            html_matriks += f"<div class='tile'>{angka}</div>"
+    html_matriks += "</div>"
+    st.markdown(html_matriks, unsafe_allow_html=True)
+    st.write("")
+
+# KELOMPOK 2: D-PAD & TOMBOL SISTEM (Bawah di HP, Kiri di Desktop)
+with col2:
     components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
@@ -225,8 +250,6 @@ with col1:
 
     <script>
     const doc = window.parent.document;
-    
-    // Menargetkan klik langsung secara presisi ke tombol aslinya di latar belakang
     const clickSystemBtn = (btnName) => {
         const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === btnName);
         if(btn) btn.click();
@@ -237,7 +260,6 @@ with col1:
     document.getElementById('ui-right').onclick = () => clickSystemBtn('Kanan');
     document.getElementById('ui-down').onclick = () => clickSystemBtn('Bawah');
 
-    // Deteksi Keyboard WASD & Arrow Key Desktop berjalan lancar kembali
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); clickSystemBtn('Atas'); }
@@ -253,29 +275,8 @@ with col1:
     with cc_bt1: st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
     with cc_bt2: st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
 
-# KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (KANAN)
-with col2:
-    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
-        st.markdown("### KONTROL GAME:")
-        st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di samping kiri.")
-        
-    st.write("")
-
-    # Tampilan Ubin Matriks Puzzle
-    html_matriks = "<div class='tile-container'>"
-    for angka in st.session_state.current_state:
-        if angka == 0:
-            html_matriks += "<div class='tile-empty'></div>"
-        else:
-            html_matriks += f"<div class='tile'>{angka}</div>"
-    html_matriks += "</div>"
-    
-    st.markdown(html_matriks, unsafe_allow_html=True)
-    st.write("")
-
 # ==========================================
-# 6. STATUS BAWAH
+# 5. STATUS BAWAH
 # ==========================================
 st.write("---")
 st.markdown(f"<p class='status-cyan'>{st.session_state.status_text_1}</p>", unsafe_allow_html=True)
