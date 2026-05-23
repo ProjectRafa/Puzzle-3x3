@@ -122,11 +122,9 @@ def geser_manual(arah):
 # ==========================================
 # 4. KONTROL INPUT DARI JAVASCRIPT JALUR STATE
 # ==========================================
-# Tombol teks "Atas, Bawah, Kiri, Kanan" resmi dihapus total dari kode Streamlit ini.
-# Sebagai gantinya, JavaScript langsung menembak fungsi ini lewat perantara internal state.
 if "js_move_trigger" in st.session_state and st.session_state.js_move_trigger != "":
     arah_terdeteksi = st.session_state.js_move_trigger
-    st.session_state.js_move_trigger = "" # Reset pemicu agar tidak berulang
+    st.session_state.js_move_trigger = "" 
     geser_manual(arah_terdeteksi)
 
 def aksi_tekan_Reset():
@@ -214,7 +212,6 @@ with col1:
     </style>
 
     <script>
-    // Mengirim data pergerakan langsung ke dalam window session_state Streamlit tanpa menyentuh element button fisik HTML
     const setMove = (direction) => {
         window.parent.postMessage({
             type: 'streamlit:set_widget_value',
@@ -222,7 +219,6 @@ with col1:
             value: direction
         }, '*');
         
-        // Memicu interaksi semu agar Streamlit sadar ada perubahan state di background
         const forceField = window.parent.document.querySelector('.stButton button');
         if(forceField) {
             forceField.focus();
@@ -235,7 +231,6 @@ with col1:
     document.getElementById('ui-right').onclick = () => setMove('Kanan');
     document.getElementById('ui-down').onclick = () => setMove('Bawah');
 
-    // Menghubungkan arrow key dan WASD PC desktop
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); setMove('Atas'); }
@@ -272,7 +267,6 @@ with col2:
     st.markdown(html_matriks, unsafe_allow_html=True)
     st.write("")
 
-# Wadah kosong di bawah untuk menampung pemicu JS state agar tidak merusak visual
 st.session_state["js_move_trigger"] = st.session_state.get("js_move_trigger", "")
 
 # ==========================================
