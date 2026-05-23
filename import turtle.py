@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from collections import deque
 import time
 
@@ -80,7 +81,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan tombol kontrol di bawah untuk menggeser ubin, atau tombol AI BFS!"
+    st.session_state.status_text_1 = "Gunakan tombol layar, Arrow Keys (Panah), atau tombol WASD di keyboard Anda!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -116,7 +117,7 @@ def geser_manual(arah):
             return
 
 # ==========================================
-# 4. HANDLER BUTTON (PENGGANTI KEYBINDING TURTLE)
+# 4. HANDLER BUTTON
 # ==========================================
 def tekan_Atas():  geser_manual('Atas')
 def tekan_Bawah(): geser_manual('Bawah')
@@ -158,7 +159,7 @@ def aksi_tekan_BFS():
 # ==========================================
 # 5. RENDER LAYOUT UTAMA (RESPONSIVE COLUMN BINDING)
 # ==========================================
-st.title("🧩 8-Puzzle BFS Solver")
+st.title("🧩 8-Puzzle BFS Solver (Keyboard Supported)")
 st.write("---")
 
 # Menggunakan kolom di desktop, namun otomatis bertumpuk vertikal di HP
@@ -181,27 +182,27 @@ with col2:
 
 # --- SISI BAWAH (HP) / SISI KIRI (DESKTOP): PANDUAN & KONTROL ---
 with col1:
-    # Menggunakan st.expander untuk panduan teks agar di HP bisa di-minimize/hemat tempat
-    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False if st.sidebar else True):
-        st.markdown("### KONTROL MANUAL PUZZLE 3x3:")
-        st.markdown("• Tombol **[ 🔼 Atas ]** : Geser Kosong ke Atas")
-        st.markdown("• Tombol **[ 🔽 Bawah ]** : Geser Kosong ke Bawah")
-        st.markdown("• Tombol **[ ◀️ Kiri ]** : Geser Kosong ke Kiri")
-        st.markdown("• Tombol **[ ▶️ Kanan ]** : Geser Kosong ke Kanan")
+    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=True):
+        st.markdown("### KONTROL GAME:")
+        st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
+        st.markdown("• Tombol **[ 🔼 Atas / W ]** : Geser Kosong ke Atas")
+        st.markdown("• Tombol **[ 🔽 Bawah / S ]** : Geser Kosong ke Bawah")
+        st.markdown("• Tombol **[ ◀️ Kiri / A ]** : Geser Kosong ke Kiri")
+        st.markdown("• Tombol **[ ▶️ Kanan / D ]** : Geser Kosong ke Kanan")
     
     st.write("")
     
-    # Grid Tombol Navigasi Manual (Dibuat proposional & mudah di-tap jempol)
+    # Grid Tombol Navigasi Manual dengan ID HTML yang unik untuk di-click oleh JavaScript
     cc1, cc2, cc3 = st.columns([1,1,1])
-    with cc2: st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True)
+    with cc2: st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_atas")
     
     cc4, cc5, cc6 = st.columns([1,1,1])
-    with cc4: st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True)
-    with cc5: st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True)
-    with cc6: st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True)
+    with cc4: st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True, key="btn_kiri")
+    with cc5: st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_reset")
+    with cc6: st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True, key="btn_kanan")
     
     cc7, cc8, cc9 = st.columns([1,1,1])
-    with cc8: st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True)
+    with cc8: st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True, key="btn_bawah")
     
     st.write("---")
     st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
@@ -213,3 +214,32 @@ st.write("---")
 st.markdown(f"<p class='status-cyan'>{st.session_state.status_text_1}</p>", unsafe_allow_html=True)
 if st.session_state.status_text_2:
     st.markdown(f"<p class='status-sub'>{st.session_state.status_text_2}</p>", unsafe_allow_html=True)
+
+# ==========================================
+# 7. JAVASCRIPT KEYBOARD LISTENER (EMBEDDED)
+# ==========================================
+# Script ini mendeteksi keydown di sisi browser, lalu memicu klik pada tombol Streamlit yang sesuai
+components.html("""
+<script>
+    const doc = window.parent.document;
+    doc.addEventListener('keydown', function(e) {
+        let key = e.key.toLowerCase();
+        let targetButton = null;
+
+        if (key === 'arrowup' || key === 'w') {
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔼 Atas'));
+        } else if (key === 'arrowdown' || key === 's') {
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔽 Bawah'));
+        } else if (key === 'arrowleft' || key === 'a') {
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('◀️ Kiri'));
+        } else if (key === 'arrowright' || key === 'd') {
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('▶️ Kanan'));
+        }
+
+        if (targetButton) {
+            e.preventDefault(); // Mencegah halaman ikut ter-scroll saat menekan panah
+            targetButton.click();
+        }
+    });
+</script>
+""", height=0)
