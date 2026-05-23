@@ -6,7 +6,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF
+# 1. STYLE CSS RESPONSIF & PENYEMBUNYI TOMBOL ASLI
 # ==========================================
 st.markdown("""
     <style>
@@ -72,6 +72,11 @@ st.markdown("""
         padding: 0.5rem 0.2rem !important;
         font-weight: bold !important;
     }
+    
+    /* Trik CSS Mutlak untuk melenyapkan tombol pemicu dari pandangan mata */
+    div[data-testid="stMarkdownContainer"] .hidden-trigger {
+        display: none !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -119,13 +124,11 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# ==========================================
-# 4. KONTROL INPUT DARI JAVASCRIPT JALUR STATE
-# ==========================================
-if "js_move_trigger" in st.session_state and st.session_state.js_move_trigger != "":
-    arah_terdeteksi = st.session_state.js_move_trigger
-    st.session_state.js_move_trigger = "" 
-    geser_manual(arah_terdeteksi)
+# Fungsi callback asli yang responsif seketika saat dipicu
+def tekan_Atas():  geser_manual('Atas')
+def tekan_Bawah(): geser_manual('Bawah')
+def tekan_Kiri():  geser_manual('Kiri')
+def tekan_Kanan(): geser_manual('Kanan')
 
 def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
@@ -169,6 +172,15 @@ col1, col2 = st.columns([1, 1], gap="large")
 
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
+    # Mengembalikan tombol backend asli Streamlit agar fungsi berjalan normal semestinya, 
+    # namun dibungkus kelas khusus CSS 'hidden-trigger' agar tidak memunculkan teks merusak visual layar.
+    st.html('<div class="hidden-trigger">')
+    st.button("Atas", on_click=tekan_Atas, key="sys_up")
+    st.button("Kiri", on_click=tekan_Kiri, key="sys_left")
+    st.button("Kanan", on_click=tekan_Kanan, key="sys_right")
+    st.button("Bawah", on_click=tekan_Bawah, key="sys_down")
+    st.html('</div>')
+
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
@@ -212,31 +224,26 @@ with col1:
     </style>
 
     <script>
-    const setMove = (direction) => {
-        window.parent.postMessage({
-            type: 'streamlit:set_widget_value',
-            key: 'js_move_trigger',
-            value: direction
-        }, '*');
-        
-        const forceField = window.parent.document.querySelector('.stButton button');
-        if(forceField) {
-            forceField.focus();
-            forceField.blur();
-        }
+    const doc = window.parent.document;
+    
+    // Mengetuk tombol asli sistem Streamlit yang tersembunyi dengan aman di background
+    const clickSystemBtn = (btnName) => {
+        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === btnName);
+        if(btn) btn.click();
     };
 
-    document.getElementById('ui-up').onclick = () => setMove('Atas');
-    document.getElementById('ui-left').onclick = () => setMove('Kiri');
-    document.getElementById('ui-right').onclick = () => setMove('Kanan');
-    document.getElementById('ui-down').onclick = () => setMove('Bawah');
+    document.getElementById('ui-up').onclick = () => clickSystemBtn('Atas');
+    document.getElementById('ui-left').onclick = () => clickSystemBtn('Kiri');
+    document.getElementById('ui-right').onclick = () => clickSystemBtn('Kanan');
+    document.getElementById('ui-down').onclick = () => clickSystemBtn('Bawah');
 
+    // Mengaktifkan kembali sensor deteksi keyboard WASD & Arrow Key Desktop
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
-        if (key === 'arrowup' || key === 'w') { e.preventDefault(); setMove('Atas'); }
-        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); setMove('Bawah'); }
-        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); setMove('Kiri'); }
-        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); setMove('Kanan'); }
+        if (key === 'arrowup' || key === 'w') { e.preventDefault(); clickSystemBtn('Atas'); }
+        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); clickSystemBtn('Bawah'); }
+        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); clickSystemBtn('Kiri'); }
+        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); clickSystemBtn('Kanan'); }
     };
     </script>
     """, height=290)
@@ -266,8 +273,6 @@ with col2:
     
     st.markdown(html_matriks, unsafe_allow_html=True)
     st.write("")
-
-st.session_state["js_move_trigger"] = st.session_state.get("js_move_trigger", "")
 
 # ==========================================
 # 6. STATUS BAWAH
