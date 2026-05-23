@@ -72,11 +72,6 @@ st.markdown("""
         padding: 0.5rem 0.2rem !important;
         font-weight: bold !important;
     }
-    
-    /* Trik CSS Gaib: Lenyapkan tombol pemicu internal dari pandangan mata */
-    div.hidden-trigger {
-        display: none !important;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -124,11 +119,13 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# Fungsi callback tombol asli semula
-def tekan_Atas():  geser_manual('Atas')
-def tekan_Bawah(): geser_manual('Bawah')
-def tekan_Kiri():  geser_manual('Kiri')
-def tekan_Kanan(): geser_manual('Kanan')
+# ==========================================
+# 4. KONTROL INPUT INTERNAL (TANPA TOMBOL FISIK)
+# ==========================================
+if "js_move_trigger" in st.session_state and st.session_state.js_move_trigger != "":
+    arah_terdeteksi = st.session_state.js_move_trigger
+    st.session_state.js_move_trigger = "" 
+    geser_manual(arah_terdeteksi)
 
 def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
@@ -172,15 +169,6 @@ col1, col2 = st.columns([1, 1], gap="large")
 
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
-    # Tombol pemicu asli ditaruh di sini agar dibaca mesin Streamlit, 
-    # namun dibungkus class CSS khusus agar tidak tampil merusak estetika visual.
-    st.markdown('<div class="hidden-trigger">', unsafe_allow_html=True)
-    st.button("Atas", on_click=tekan_Atas, key="sys_up")
-    st.button("Kiri", on_click=tekan_Kiri, key="sys_left")
-    st.button("Kanan", on_click=tekan_Kanan, key="sys_right")
-    st.button("Bawah", on_click=tekan_Bawah, key="sys_down")
-    st.markdown('</div>', unsafe_allow_html=True)
-
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
@@ -224,26 +212,41 @@ with col1:
     </style>
 
     <script>
-    const doc = window.parent.document;
-    
-    // Menargetkan klik langsung secara presisi ke tombol aslinya di latar belakang
-    const clickSystemBtn = (btnName) => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === btnName);
-        if(btn) btn.click();
+    // Membuat target pemicu bayangan yang aman di level DOM utama agar fokus tidak salah alamat
+    let triggerInput = window.parent.document.getElementById('hidden-focus-trigger');
+    if (!triggerInput) {
+        triggerInput = window.parent.document.createElement('input');
+        triggerInput.id = 'hidden-focus-trigger';
+        triggerInput.type = 'text';
+        triggerInput.style.position = 'absolute';
+        triggerInput.style.opacity = '0';
+        triggerInput.style.pointerEvents = 'none';
+        window.parent.document.body.appendChild(triggerInput);
+    }
+
+    const setMove = (direction) => {
+        window.parent.postMessage({
+            type: 'streamlit:set_widget_value',
+            key: 'js_move_trigger',
+            value: direction
+        }, '*');
+        
+        // Memicu siklus pembaruan internal Streamlit melalui pemicu bayangan
+        triggerInput.focus();
+        triggerInput.blur();
     };
 
-    document.getElementById('ui-up').onclick = () => clickSystemBtn('Atas');
-    document.getElementById('ui-left').onclick = () => clickSystemBtn('Kiri');
-    document.getElementById('ui-right').onclick = () => clickSystemBtn('Kanan');
-    document.getElementById('ui-down').onclick = () => clickSystemBtn('Bawah');
+    document.getElementById('ui-up').onclick = () => setMove('Atas');
+    document.getElementById('ui-left').onclick = () => setMove('Kiri');
+    document.getElementById('ui-right').onclick = () => setMove('Kanan');
+    document.getElementById('ui-down').onclick = () => setMove('Bawah');
 
-    // Deteksi Keyboard WASD & Arrow Key Desktop berjalan lancar kembali
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
-        if (key === 'arrowup' || key === 'w') { e.preventDefault(); clickSystemBtn('Atas'); }
-        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); clickSystemBtn('Bawah'); }
-        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); clickSystemBtn('Kiri'); }
-        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); clickSystemBtn('Kanan'); }
+        if (key === 'arrowup' || key === 'w') { e.preventDefault(); setMove('Atas'); }
+        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); setMove('Bawah'); }
+        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); setMove('Kiri'); }
+        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); setMove('Kanan'); }
     };
     </script>
     """, height=290)
@@ -273,6 +276,8 @@ with col2:
     
     st.markdown(html_matriks, unsafe_allow_html=True)
     st.write("")
+
+st.session_state["js_move_trigger"] = st.session_state.get("js_move_trigger", "")
 
 # ==========================================
 # 6. STATUS BAWAH
