@@ -159,13 +159,14 @@ def aksi_tekan_BFS():
 # ==========================================
 # 5. RENDER LAYOUT UTAMA (RESPONSIVE COLUMN BINDING)
 # ==========================================
-st.title("🧩 8-Puzzle BFS Solver (Keyboard Supported)")
+st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
-# Menggunakan kolom di desktop, namun otomatis bertumpuk vertikal di HP
+# Menginisialisasi dua kolom (Kiri untuk tombol kontrol, Kanan untuk visual matriks di Desktop)
 col1, col2 = st.columns([1, 1], gap="large")
 
-# --- SISI ATAS (HP) / SISI KANAN (DESKTOP): MATRIKS GRAFIS PUZZLE ---
+# --- SEKARANG DIRENDER PERTAMA: MATRIKS GRAFIS PUZZLE ---
+# (Di Desktop berada di kanan, di HP otomatis naik ke posisi paling atas)
 with col2:
     st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>TAMPILAN PUZZLE</h3>", unsafe_allow_html=True)
     
@@ -180,9 +181,10 @@ with col2:
     st.markdown(html_matriks, unsafe_allow_html=True)
     st.write("")
 
-# --- SISI BAWAH (HP) / SISI KIRI (DESKTOP): PANDUAN & KONTROL ---
+# --- DIRENDER KEDUA: PANDUAN & KONTROL MANUAL ---
+# (Di Desktop berada di kiri, di HP otomatis turun di bawah Puzzle)
 with col1:
-    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=True):
+    with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
         st.markdown("• Tombol **[ 🔼 Atas / W ]** : Geser Kosong ke Atas")
@@ -192,7 +194,7 @@ with col1:
     
     st.write("")
     
-    # Grid Tombol Navigasi Manual dengan ID HTML yang unik untuk di-click oleh JavaScript
+    # Grid Tombol Navigasi Manual
     cc1, cc2, cc3 = st.columns([1,1,1])
     with cc2: st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_atas")
     
@@ -218,7 +220,6 @@ if st.session_state.status_text_2:
 # ==========================================
 # 7. JAVASCRIPT KEYBOARD LISTENER (EMBEDDED)
 # ==========================================
-# Script ini mendeteksi keydown di sisi browser, lalu memicu klik pada tombol Streamlit yang sesuai
 components.html("""
 <script>
     const doc = window.parent.document;
@@ -237,7 +238,7 @@ components.html("""
         }
 
         if (targetButton) {
-            e.preventDefault(); // Mencegah halaman ikut ter-scroll saat menekan panah
+            e.preventDefault(); 
             targetButton.click();
         }
     });
