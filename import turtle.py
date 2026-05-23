@@ -23,44 +23,42 @@ st.markdown("""
         color: #E2E8F0;
     }
     
-    /* LAYOUT KHUSUS HP (SCREEN MOBILE) */
+    /* ==========================================
+       TRICK UTAMA UNTUK LAYOUT HP (SCREEN MOBILE)
+       ========================================== */
     @media (max-width: 768px) {
-        /* Membalik susunan utama: Puzzle di atas, Tombol di bawah */
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: column-reverse !important; 
+            flex-direction: column-reverse !important; /* Membalik urutan agar puzzle berada di atas */
         }
         
-        /* Sembunyikan tombol AI BFS Solver saat di HP */
-        .ai-btn-container {
+        /* SEMBUNYIKAN TOTAL KONTROL DESKTOP (Tombol Grid & Tombol AI) SAAT DI HP */
+        .desktop-controls {
             display: none !important;
         }
-
-        /* SIHIR UTAMA: Mengubah baris tombol Streamlit menjadi D-Pad Silang di HP */
-        .mobile-dpad-style {
-            display: grid !important;
-            grid-template-columns: repeat(3, 1fr) !important;
-            grid-template-rows: repeat(3, auto) !important;
-            gap: 10px !important;
-            max-width: 280px !important;
-            margin: 20px auto !important; /* Membuat posisi D-pad pas di tengah layar HP */
-        }
         
-        /* Memposisikan masing-masing tombol Streamlit ke grid D-Pad */
-        .mobile-dpad-style > div:nth-child(1) { grid-column: 2; grid-row: 1; } /* Atas */
-        .mobile-dpad-style > div:nth-child(2) { grid-column: 1; grid-row: 2; } /* Kiri */
-        .mobile-dpad-style > div:nth-child(3) { grid-column: 2; grid-row: 2; } /* Reset (di tengah) */
-        .mobile-dpad-style > div:nth-child(4) { grid-column: 3; grid-row: 2; } /* Kanan */
-        .mobile-dpad-style > div:nth-child(5) { grid-column: 2; grid-row: 3; } /* Bawah */
-        
-        /* Membuat tombol lebih bersahabat untuk sentuhan jari di HP */
-        .stButton>button {
-            height: 60px !important;
-            font-size: 1.1rem !important;
+        /* Pastikan D-Pad HTML bawaan kode Anda tampil sempurna di HP */
+        .mobile-dpad {
+            display: block !important;
+            margin-top: 10px !important;
         }
     }
 
-    /* Grid container untuk ubin puzzle */
+    /* ==========================================
+       TRICK UTAMA UNTUK LAYOUT DESKTOP
+       ========================================== */
+    @media (min-width: 769px) {
+        /* Tampilkan tombol asli & AI Solver saat di Desktop */
+        .desktop-controls {
+            display: block !important;
+        }
+        /* Sembunyikan D-Pad HTML kustom saat di Desktop */
+        .mobile-dpad {
+            display: none !important;
+        }
+    }
+
+    /* Grid container menggunakan max-width agar tidak terlalu raksasa di desktop */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -102,12 +100,10 @@ st.markdown("""
         text-align: center;
         word-break: break-word;
     }
-    /* Penyesuaian standar tombol desktop */
-    @media (min-width: 769px) {
-        .stButton>button {
-            padding: 0.5rem 0.2rem !important;
-            font-weight: bold !important;
-        }
+    /* Penyesuaian khusus tombol agar tebal di Desktop */
+    .stButton>button {
+        padding: 0.5rem 0.2rem !important;
+        font-weight: bold !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -209,26 +205,86 @@ with col1:
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **Layar Ponsel & Laptop:** Gunakan tombol arah teks di bawah.")
+        st.markdown("• **Layar Ponsel:** Gunakan controller murni D-Pad di bawah.")
+        st.markdown("• **Layar Laptop:** Gunakan tombol grid abu-abu asli + Fitur AI BFS Solver.")
 
+    # ----------------------------------------------------
+    # TAMPILAN DESKTOP (Grid 3 Kolom + Tombol AI)
+    # ----------------------------------------------------
+    # Seluruh komponen ini dimasukkan ke dalam div kelas .desktop-controls
+    # Kelas ini akan di-hide (display: none) secara total saat dibuka di HP
+    st.markdown('<div class="desktop-controls">', unsafe_allow_html=True)
     st.write("")
+    cc1, cc2, cc3 = st.columns([1,1,1])
+    with cc2: st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_dt_up")
     
-    # Bungkus baris tombol ini ke dalam satu container div HTML kustom
-    st.markdown('<div class="mobile-dpad-style">', unsafe_allow_html=True)
+    cc4, cc5, cc6 = st.columns([1,1,1])
+    with cc4: st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True, key="btn_dt_left")
+    with cc5: st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
+    with cc6: st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True, key="btn_dt_right")
     
-    # Kita tidak perlu lagi memisahkan ke dalam objek st.columns bawaan agar CSS Grid di HP bisa mengambil kendali penuh
-    st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_up")
-    st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True, key="btn_left")
-    st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_reset")
-    st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True, key="btn_right")
-    st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True, key="btn_down")
+    cc7, cc8, cc9 = st.columns([1,1,1])
+    with cc8: st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True, key="btn_dt_down")
     
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Bagian Tombol AI Solver dipisah agar bisa disembunyikan khusus di HP menggunakan kelas CSS .ai-btn-container
-    st.markdown('<div class="ai-btn-container">', unsafe_allow_html=True)
     st.write("---")
-    st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_bfs")
+    st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ----------------------------------------------------
+    # TAMPILAN HP (HANYA STRUKTUR D-PAD HTML KUSTOM ANDA)
+    # ----------------------------------------------------
+    st.markdown('<div class="mobile-dpad">', unsafe_allow_html=True)
+    components.html("""
+    <div class="dpad-wrapper">
+        <div class="dpad-container">
+            <button class="dpad-btn up" id="ui-up" title="Atas">
+                <svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
+            </button>
+            <button class="dpad-btn left" id="ui-left" title="Kiri">
+                <svg viewBox="0 0 24 24"><path d="M4 12l8-8v6h8v4h-8v6z"/></svg>
+            </button>
+            <div class="dpad-center"></div>
+            <button class="dpad-btn right" id="ui-right" title="Kanan">
+                <svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg>
+            </button>
+            <button class="dpad-btn down" id="ui-down" title="Bawah">
+                <svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <style>
+    .dpad-wrapper { display: flex; justify-content: center; align-items: center; margin: 15px auto; }
+    .dpad-container {
+        display: grid; grid-template-columns: repeat(3, 75px); grid-template-rows: repeat(3, 75px); gap: 2px;
+        background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 50%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .dpad-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 2px solid #1d4ed8;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
+        display: flex; align-items: center; justify-content: center; transition: all 0.1s ease;
+    }
+    .dpad-btn svg { width: 40px; height: 40px; fill: #f8fafc; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); }
+    .up { grid-column: 2; grid-row: 1; border-radius: 12px 12px 0 0; position: relative;}
+    .left { grid-column: 1; grid-row: 2; border-radius: 12px 0 0 12px; position: relative;}
+    .right { grid-column: 3; grid-row: 2; border-radius: 0 12px 12px 0; position: relative;}
+    .down { grid-column: 2; grid-row: 3; border-radius: 0 0 12px 12px; position: relative;}
+    .dpad-center { grid-column: 2; grid-row: 2; background: #1e293b; border: none; }
+    .dpad-btn:active { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); transform: scale(0.95); }
+    </style>
+
+    <script>
+    const doc = window.parent.document;
+    const triggerClick = (text) => {
+        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes(text));
+        if(btn) btn.click();
+    };
+    document.getElementById('ui-up').onclick = () => triggerClick('🔼 Atas');
+    document.getElementById('ui-left').onclick = () => triggerClick('◀️ Kiri');
+    document.getElementById('ui-right').onclick = () => triggerClick('▶️ Kanan');
+    document.getElementById('ui-down').onclick = () => triggerClick('🔽 Bawah');
+    </script>
+    """, height=290)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # KELOMPOK VISUALISASI MATRIKS PUZZLE
