@@ -119,7 +119,7 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# Fungsi pemicu kembalian dari deteksi tombol kustom internal
+# Fungsi pemicu balik interaksi state internal
 if "internal_move" in st.session_state and st.session_state.internal_move != "":
     arah_aksi = st.session_state.internal_move
     st.session_state.internal_move = ""
@@ -158,7 +158,7 @@ def aksi_tekan_BFS():
         st.session_state.status_text_2 = ""
 
 # ==========================================
-# 5. RENDER LAYOUT UTAMA (TIDAK BERUBAH)
+# 5. RENDER LAYOUT UTAMA
 # ==========================================
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
@@ -170,9 +170,8 @@ with col1:
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
-    # Rahasianya: Menggunakan form tersembunyi berukuran 0px di dalam iframe D-Pad.
-    # Tidak akan merusak visual halaman luar Anda sedikit pun.
-    components.html(f"""
+    # f-string dihapus dan diganti string biasa murni agar tidak memicu SyntaxError Python
+    components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
             <button class="dpad-btn up" id="ui-up" title="Atas">
@@ -223,7 +222,7 @@ with col1:
             value: direction
         }, '*');
         
-        // Memaksa Streamlit mendeteksi perubahan input dengan menargetkan tombol acak di halaman luar luar secara aman
+        // Memaksa sinkronisasi internal dengan menargetkan tombol fisik apa saja yang ada di layar luar
         const anyBtn = window.parent.document.querySelector('button');
         if(anyBtn) { anyBtn.focus(); anyBtn.blur(); }
     };
@@ -233,7 +232,7 @@ with col1:
     document.getElementById('ui-right').onclick = () => executeMove('Kanan');
     document.getElementById('ui-down').onclick = () => executeMove('Bawah');
 
-    // Menangkap kontrol keyboard WASD / Arrow Key Desktop asli
+    // Menangkap pergerakan keyboard WASD & Arrow Key
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); executeMove('Atas'); }
