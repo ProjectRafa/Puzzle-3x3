@@ -5,7 +5,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF & D-PAD MODEL LINGKARAN
+# 1. STYLE CSS RESPONSIF & FIX D-PAD LINGKARAN MURNI
 # ==========================================
 st.markdown("""
     <style>
@@ -27,72 +27,79 @@ st.markdown("""
         }
     }
 
-    /* CONTAINER UTAMA D-PAD BULAT MEMBULAT */
+    /* CONTAINER UTAMA D-PAD LINGKARAN PRESISI */
     .dpad-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin: 15px auto;
+        margin: 20px auto;
     }
     
     .dpad-circle-container {
         display: grid;
         grid-template-columns: repeat(3, 75px);
         grid-template-rows: repeat(3, 75px);
-        gap: 2px;
-        background: rgba(30, 41, 59, 0.5);
+        gap: 4px;
+        background: rgba(30, 41, 59, 0.6);
         padding: 12px;
         border-radius: 50%;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
-        width: 249px;
-        height: 249px;
+        box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.4);
+        width: 253px;
+        height: 253px;
+        box-sizing: border-box;
     }
     
-    /* Sinkronisasi Tombol Streamlit ke dalam Grid Bulat */
+    /* Reset total pembungkus tombol bawaan Streamlit */
     .dpad-circle-container div[data-testid="stButton"] {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
+        width: 100% !important;
+        height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
+        display: block !important;
     }
     
-    .dpad-circle-container button {
+    /* Memaksa elemen button murni untuk mengisi penuh grid space */
+    .dpad-circle-container div[data-testid="stButton"] > button {
         width: 100% !important;
         height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
         color: #f8fafc !important;
         border: 2px solid #1d4ed8 !important;
-        font-size: 1.5rem !important;
+        font-size: 1.6rem !important;
         font-weight: bold !important;
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3) !important;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 6px rgba(0,0,0,0.3) !important;
         transition: all 0.1s ease !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
     }
     
-    .dpad-circle-container button:active {
+    .dpad-circle-container div[data-testid="stButton"] > button:hover {
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+    }
+
+    .dpad-circle-container div[data-testid="stButton"] > button:active {
         background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
         transform: scale(0.95) !important;
     }
     
-    /* Pemotongan Sudut Tombol Mengikuti Lengkungan Lingkaran */
-    .dpad-up-btn button { border-radius: 14px 14px 0 0 !important; }
-    .dpad-left-btn button { border-radius: 14px 0 0 14px !important; }
-    .dpad-right-btn button { border-radius: 0 14px 14px 0 !important; }
-    .dpad-down-btn button { border-radius: 0 0 14px 14px !important; }
+    /* Desain melengkung khusus potongan sudut luar lingkaran */
+    .dpad-up-btn div[data-testid="stButton"] > button { border-radius: 20px 20px 4px 4px !important; }
+    .dpad-left-btn div[data-testid="stButton"] > button { border-radius: 20px 4px 4px 20px !important; }
+    .dpad-right-btn div[data-testid="stButton"] > button { border-radius: 4px 20px 20px 4px !important; }
+    .dpad-down-btn div[data-testid="stButton"] > button { border-radius: 4px 4px 20px 20px !important; }
 
-    /* Posisi Penempatan Sektor Silang */
+    /* Penempatan Grid Koordinat Sektor */
     .dpad-up-btn { grid-column: 2; grid-row: 1; }
     .dpad-left-btn { grid-column: 1; grid-row: 2; }
-    .dpad-center-space { grid-column: 2; grid-row: 2; background: #1e293b; border: none; }
+    .dpad-center-space { grid-column: 2; grid-row: 2; background: #1e293b; border-radius: 6px; }
     .dpad-right-btn { grid-column: 3; grid-row: 2; }
     .dpad-down-btn { grid-column: 2; grid-row: 3; }
 
-    /* STYLE MATRIKS PUZZLE (KANAN) */
+    /* STYLE MATRIKS PUZZLE */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -149,7 +156,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan D-Pad Bulat di layar, Arrow Keys, atau tombol WASD untuk bermain!"
+    st.session_state.status_text_1 = "Gunakan D-Pad bulat di layar, Arrow Keys, atau tombol WASD untuk bermain!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -250,7 +257,7 @@ col1, col2 = st.columns([1, 1], gap="large")
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
     # ----------------------------------------------------
-    # MODEL LINGKARAN PENUH: BERBASIS TOMBOL PYTHON MURNI
+    # FIX LAYOUT: D-PAD BULAT PRESISI BERBASIS TOMBOL PYTHON
     # ----------------------------------------------------
     st.markdown('<div class="dpad-wrapper">', unsafe_allow_html=True)
     st.markdown('<div class="dpad-circle-container">', unsafe_allow_html=True)
