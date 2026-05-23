@@ -6,7 +6,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF & PENYEMBUNYI TOMBOL ASLI
+# 1. STYLE CSS RESPONSIF
 # ==========================================
 st.markdown("""
     <style>
@@ -73,8 +73,8 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* Trik CSS Mutlak untuk melenyapkan tombol pemicu dari pandangan mata */
-    div[data-testid="stMarkdownContainer"] .hidden-trigger {
+    /* Trik CSS Gaib: Lenyapkan tombol pemicu internal dari pandangan mata */
+    div.hidden-trigger {
         display: none !important;
     }
     </style>
@@ -124,7 +124,7 @@ def geser_manual(arah):
                 st.session_state.status_text_1 = "🎉 GOAL STATE TERCAPAI! Puzzle Berhasil Disusun! 🎉"
             return
 
-# Fungsi callback asli yang responsif seketika saat dipicu
+# Fungsi callback tombol asli semula
 def tekan_Atas():  geser_manual('Atas')
 def tekan_Bawah(): geser_manual('Bawah')
 def tekan_Kiri():  geser_manual('Kiri')
@@ -172,14 +172,14 @@ col1, col2 = st.columns([1, 1], gap="large")
 
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
-    # Mengembalikan tombol backend asli Streamlit agar fungsi berjalan normal semestinya, 
-    # namun dibungkus kelas khusus CSS 'hidden-trigger' agar tidak memunculkan teks merusak visual layar.
-    st.html('<div class="hidden-trigger">')
+    # Tombol pemicu asli ditaruh di sini agar dibaca mesin Streamlit, 
+    # namun dibungkus class CSS khusus agar tidak tampil merusak estetika visual.
+    st.markdown('<div class="hidden-trigger">', unsafe_allow_html=True)
     st.button("Atas", on_click=tekan_Atas, key="sys_up")
     st.button("Kiri", on_click=tekan_Kiri, key="sys_left")
     st.button("Kanan", on_click=tekan_Kanan, key="sys_right")
     st.button("Bawah", on_click=tekan_Bawah, key="sys_down")
-    st.html('</div>')
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
@@ -226,7 +226,7 @@ with col1:
     <script>
     const doc = window.parent.document;
     
-    // Mengetuk tombol asli sistem Streamlit yang tersembunyi dengan aman di background
+    // Menargetkan klik langsung secara presisi ke tombol aslinya di latar belakang
     const clickSystemBtn = (btnName) => {
         const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === btnName);
         if(btn) btn.click();
@@ -237,7 +237,7 @@ with col1:
     document.getElementById('ui-right').onclick = () => clickSystemBtn('Kanan');
     document.getElementById('ui-down').onclick = () => clickSystemBtn('Bawah');
 
-    // Mengaktifkan kembali sensor deteksi keyboard WASD & Arrow Key Desktop
+    // Deteksi Keyboard WASD & Arrow Key Desktop berjalan lancar kembali
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); clickSystemBtn('Atas'); }
