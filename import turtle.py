@@ -1,9 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from collections import deque
 
 # Set konfig halaman Streamlit agar mendukung layout luas
-st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
+st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3")
 
 # ==========================================
 # 1. STYLE CSS RESPONSIF (POSISI PRESISI)
@@ -124,24 +123,10 @@ def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
     st.session_state.status_text_1 = "Game di-reset."
 
-def aksi_tekan_BFS():
-    queue = deque([(st.session_state.current_state, [])])
-    visited = {st.session_state.current_state}
-    while queue:
-        curr, path = queue.popleft()
-        if curr == GOAL_STATE:
-            st.session_state.current_state = GOAL_STATE
-            st.session_state.status_text_1 = "🎉 AI BFS Berhasil Menemukan Solusi! 🎉"
-            return
-        for tetangga, move in dapatkan_tetangga(curr):
-            if tetangga not in visited:
-                visited.add(tetangga)
-                queue.append((tetangga, path + [move]))
-
 # ==========================================
 # 3. RENDER LAYOUT UTAMA
 # ==========================================
-st.title("🧩 8-Puzzle BFS Solver")
+st.title("🧩 8-Puzzle Solver")
 st.write("---")
 
 # Tombol jembatan kosong diidentifikasi via parameter key unik
@@ -228,9 +213,8 @@ with col2:
     """, height=260)
     
     st.write("")
-    c1, c2 = st.columns(2)
-    with c1: st.button("🔄 RESET", on_click=aksi_tekan_Reset, use_container_width=True)
-    with c2: st.button("🤖 AI BFS", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
+    # Hanya menyisakan tombol RESET penuh lebar kolom
+    st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True)
 
 # Status
 st.write("---")
