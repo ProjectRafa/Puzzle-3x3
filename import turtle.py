@@ -6,7 +6,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF & PENYEMBUNYIAN TOMBOL JEMBATAN
+# 1. STYLE CSS RESPONSIF (D-PAD DI BAWAH PADA HP)
 # ==========================================
 st.markdown("""
     <style>
@@ -21,15 +21,24 @@ st.markdown("""
         color: #E2E8F0;
     }
     
+    /* DESKTOP: Menyusun berdampingan (D-Pad Kiri, Puzzle Kanan) */
+    @media (min-width: 769px) {
+        [data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row !important; /* D-Pad tetap di kiri */
+            align-items: center !important;
+        }
+    }
+
+    /* HP/MOBILE: Memaksa Puzzle di atas, D-Pad persis di bawahnya */
     @media (max-width: 768px) {
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: column-reverse !important;
+            flex-direction: column !important; /* Menyusun vertikal ke bawah */
         }
     }
 
     /* MENYEMBUNYIKAN TOMBOL KONTROL ASLI SECARA TOTAL */
-    /* Tombol tetap ada di sistem agar bisa diklik JavaScript, tapi tidak terlihat oleh mata */
     .hidden-control-container {
         position: absolute;
         width: 0px;
@@ -163,29 +172,23 @@ def aksi_tekan_BFS():
         st.session_state.status_text_2 = ""
 
 # ==========================================
-# 4. RENDER LAYOUT UTAMA
+# 4. RENDER LAYOUT UTAMA (DIURUTKAN UNTUK RESPONSIVITAS)
 # ==========================================
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
+# Menginisialisasi tombol jembatan tersembunyi agar fungsi klik tetap berjalan di latar belakang
+st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
+st.button("HIDDEN_UP", on_click=geser_manual, args=('Atas',), key="h_up")
+st.button("HIDDEN_DOWN", on_click=geser_manual, args=('Bawah',), key="h_down")
+st.button("HIDDEN_LEFT", on_click=geser_manual, args=('Kiri',), key="h_left")
+st.button("HIDDEN_RIGHT", on_click=geser_manual, args=('Kanan',), key="h_right")
+st.markdown('</div>', unsafe_allow_html=True)
+
 col1, col2 = st.columns([1, 1], gap="large")
 
-# KELOMPOK KONTROL MANUAL (KIRI)
+# KELOMPOK D-PAD (DI KIRI PADA DESKTOP / DI BAWAH PUZZLE PADA HP)
 with col1:
-    
-    # ----------------------------------------------------
-    # TOMBOL JEMBATAN ASLI STREAMLIT (DISEMBUNYIKAN SECARA TOTAL)
-    # ----------------------------------------------------
-    st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
-    st.button("HIDDEN_UP", on_click=geser_manual, args=('Atas',), key="h_up")
-    st.button("HIDDEN_DOWN", on_click=geser_manual, args=('Bawah',), key="h_down")
-    st.button("HIDDEN_LEFT", on_click=geser_manual, args=('Kiri',), key="h_left")
-    st.button("HIDDEN_RIGHT", on_click=geser_manual, args=('Kanan',), key="h_right")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # ----------------------------------------------------
-    # MODEL D-PAD LINGKARAN MURNI (HTML / SVG)
-    # ----------------------------------------------------
     components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
@@ -226,7 +229,6 @@ with col1:
     </style>
 
     <script>
-    // Fungsi pencari tombol tersembunyi berdasarkan teks isinya (Sangat Akurat)
     function pemicuTombolAsli(namaTombol) {
         const semuaTombol = window.parent.document.querySelectorAll('button');
         for (let btn of semuaTombol) {
@@ -242,7 +244,6 @@ with col1:
     document.getElementById('ui-left').onclick = () => pemicuTombolAsli('HIDDEN_LEFT');
     document.getElementById('ui-right').onclick = () => pemicuTombolAsli('HIDDEN_RIGHT');
 
-    // Menangkap kontrol Keyboard Desktop (WASD & Panah)
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
         if (key === 'arrowup' || key === 'w') { e.preventDefault(); pemicuTombolAsli('HIDDEN_UP'); }
@@ -258,12 +259,12 @@ with col1:
     with cc_bt1: st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
     with cc_bt2: st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
 
-# KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (KANAN)
+# KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (DI KANAN PADA DESKTOP / DI ATAS D-PAD PADA HP)
 with col2:
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di samping kiri.")
+        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di layar.")
         
     st.write("")
 
