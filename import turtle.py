@@ -73,14 +73,10 @@ st.markdown("""
         text-align: center;
         word-break: break-word;
     }
-    /* Style tombol AI agar pas di container */
+    /* Style tombol AI & Reset agar pas di container */
     .stButton>button {
         padding: 0.5rem 0.2rem !important;
         font-weight: bold !important;
-    }
-    /* Sembunyikan tombol trigger tak terlihat */
-    .hidden-btn {
-        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -130,12 +126,16 @@ def geser_manual(arah):
             return
 
 # ==========================================
-# 4. HANDLER BUTTON
+# 4. KONTROL QUERY PARAMETER (PENGGANTI TOMBOL HIDDEN)
 # ==========================================
-def tekan_Atas():  geser_manual('Atas')
-def tekan_Bawah(): geser_manual('Bawah')
-def tekan_Kiri():  geser_manual('Kiri')
-def tekan_Kanan(): geser_manual('Kanan')
+# Membaca pergerakan langsung dari URL/Query parameter yang dikirim oleh JavaScript
+query_params = st.query_params
+if "move" in query_params:
+    arah_pilihan = query_params["move"]
+    # Hapus parameter segera agar tidak terjadi pergeseran terus-menerus saat refresh
+    st.query_params.clear()
+    geser_manual(arah_pilihan)
+    st.rerun()
 
 def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
@@ -186,14 +186,6 @@ with col1:
 
     st.write("")
 
-    # Tombol backend Streamlit disembunyikan lewat CSS (.hidden-btn) agar D-Pad HTML bisa memicu fungsi Python
-    st.markdown('<div class="hidden-btn">', unsafe_allow_html=True)
-    st.button("TriggerAtas", on_click=tekan_Atas, key="hidden_up")
-    st.button("TriggerKiri", on_click=tekan_Kiri, key="hidden_left")
-    st.button("TriggerKanan", on_click=tekan_Kanan, key="hidden_right")
-    st.button("TriggerBawah", on_click=tekan_Bawah, key="hidden_down")
-    st.markdown('</div>', unsafe_allow_html=True)
-
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
@@ -237,15 +229,26 @@ with col1:
     </style>
 
     <script>
-    const doc = window.parent.document;
-    const triggerClick = (text) => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === text);
-        if(btn) btn.click();
+    // Fungsi untuk mengirim perintah gerak langsung ke backend Python Streamlit tanpa tombol bantu
+    const sendMove = (direction) => {
+        const url = new URL(window.parent.location.href);
+        url.searchParams.set("move", direction);
+        window.parent.location.href = url.href;
     };
-    document.getElementById('ui-up').onclick = () => triggerClick('TriggerAtas');
-    document.getElementById('ui-left').onclick = () => triggerClick('TriggerKiri');
-    document.getElementById('ui-right').onclick = () => triggerClick('TriggerKanan');
-    document.getElementById('ui-down').onclick = () => triggerClick('TriggerBawah');
+
+    document.getElementById('ui-up').onclick = () => sendMove('Atas');
+    document.getElementById('ui-left').onclick = () => sendMove('Kiri');
+    document.getElementById('ui-right').onclick = () => sendMove('Kanan');
+    document.getElementById('ui-down').onclick = () => sendMove('Bawah');
+
+    // Listener Keyboard (Arrow Keys & WASD) langsung di dalam scope penangkap utama
+    window.parent.document.onkeydown = function(e) {
+        let key = e.key.toLowerCase();
+        if (key === 'arrowup' || key === 'w') { e.preventDefault(); sendMove('Atas'); }
+        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); sendMove('Bawah'); }
+        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); sendMove('Kiri'); }
+        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); sendMove('Kanan'); }
+    };
     </script>
     """, height=290)
 
@@ -277,31 +280,3 @@ st.write("---")
 st.markdown(f"<p class='status-cyan'>{st.session_state.status_text_1}</p>", unsafe_allow_html=True)
 if st.session_state.status_text_2:
     st.markdown(f"<p class='status-sub'>{st.session_state.status_text_2}</p>", unsafe_allow_html=True)
-
-# ==========================================
-# 7. JAVASCRIPT KEYBOARD LISTENER (EMBEDDED)
-# ==========================================
-components.html("""
-<script>
-    const doc = window.parent.document;
-    doc.addEventListener('keydown', function(e) {
-        let key = e.key.toLowerCase();
-        let targetButton = null;
-
-        if (key === 'arrowup' || key === 'w') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerAtas');
-        } else if (key === 'arrowdown' || key === 's') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerBawah');
-        } else if (key === 'arrowleft' || key === 'a') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerKiri');
-        } else if (key === 'arrowright' || key === 'd') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerKanan');
-        }
-
-        if (targetButton) {
-            e.preventDefault(); 
-            targetButton.click();
-        }
-    });
-</script>
-""", height=0)
