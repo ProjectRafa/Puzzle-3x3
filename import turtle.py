@@ -126,14 +126,12 @@ def geser_manual(arah):
             return
 
 # ==========================================
-# 4. KONTROL QUERY PARAMETER
+# 4. HANDLER BUTTON (BACKEND AKSI)
 # ==========================================
-query_params = st.query_params
-if "move" in query_params:
-    arah_pilihan = query_params["move"]
-    st.query_params.clear()
-    geser_manual(arah_pilihan)
-    st.rerun()
+def tekan_Atas():  geser_manual('Atas')
+def tekan_Bawah(): geser_manual('Bawah')
+def tekan_Kiri():  geser_manual('Kiri')
+def tekan_Kanan(): geser_manual('Kanan')
 
 def aksi_tekan_Reset():
     st.session_state.current_state = INITIAL_STATE
@@ -177,6 +175,20 @@ col1, col2 = st.columns([1, 1], gap="large")
 
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
+    
+    # -------------------------------------------------------------------------
+    # TOMBOL UTAMA (DISEMBUNYIKAN SECARA ELEGAN MENGGUNAKAN NOSCRIPT/CONTAINER)
+    # -------------------------------------------------------------------------
+    # Menggunakan trik CSS container kosong agar tombol tetap dirender mesin Streamlit 
+    # tetapi tidak memakan pixel ruang di monitor pengguna.
+    with st.container():
+        st.markdown('<div style="position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none;">', unsafe_allow_html=True)
+        st.button("Atas", on_click=tekan_Atas, key="real_up")
+        st.button("Kiri", on_click=tekan_Kiri, key="real_left")
+        st.button("Kanan", on_click=tekan_Kanan, key="real_right")
+        st.button("Bawah", on_click=tekan_Bawah, key="real_down")
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # ----------------------------------------------------
     # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
@@ -220,23 +232,26 @@ with col1:
     </style>
 
     <script>
-    const sendMove = (direction) => {
-        const url = new URL(window.parent.location.href);
-        url.searchParams.set("move", direction);
-        window.parent.location.href = url.href;
+    const doc = window.parent.document;
+    
+    // Mengetuk tombol asli Streamlit di latar belakang tanpa reload URL halaman
+    const triggerClick = (text) => {
+        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === text);
+        if(btn) btn.click();
     };
 
-    document.getElementById('ui-up').onclick = () => sendMove('Atas');
-    document.getElementById('ui-left').onclick = () => sendMove('Kiri');
-    document.getElementById('ui-right').onclick = () => sendMove('Kanan');
-    document.getElementById('ui-down').onclick = () => sendMove('Bawah');
+    document.getElementById('ui-up').onclick = () => triggerClick('Atas');
+    document.getElementById('ui-left').onclick = () => triggerClick('Kiri');
+    document.getElementById('ui-right').onclick = () => triggerClick('Kanan');
+    document.getElementById('ui-down').onclick = () => triggerClick('Bawah');
 
+    // Keyboard Listener yang ditaruh di level paling atas window agar WASD dan Panah berfungsi mulus kembali
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
-        if (key === 'arrowup' || key === 'w') { e.preventDefault(); sendMove('Atas'); }
-        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); sendMove('Bawah'); }
-        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); sendMove('Kiri'); }
-        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); sendMove('Kanan'); }
+        if (key === 'arrowup' || key === 'w') { e.preventDefault(); triggerClick('Atas'); }
+        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); triggerClick('Bawah'); }
+        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); triggerClick('Kiri'); }
+        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); triggerClick('Kanan'); }
     };
     </script>
     """, height=290)
@@ -248,7 +263,6 @@ with col1:
 
 # KELOMPOK VISUALISASI MATRIKS PUZZLE & PANDUAN (KANAN)
 with col2:
-    # "Lihat Panduan Kontrol Game" dipindahkan ke sini (di atas puzzle)
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
