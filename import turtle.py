@@ -23,15 +23,44 @@ st.markdown("""
         color: #E2E8F0;
     }
     
-    /* TRICK UTAMA UNTUK HP: Memaksa susunan kolom Streamlit patuh dari atas ke bawah */
+    /* LAYOUT KHUSUS HP (SCREEN MOBILE) */
     @media (max-width: 768px) {
+        /* Membalik susunan utama: Puzzle di atas, Tombol di bawah */
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column-reverse !important; 
         }
+        
+        /* Sembunyikan tombol AI BFS Solver saat di HP */
+        .ai-btn-container {
+            display: none !important;
+        }
+
+        /* SIHIR UTAMA: Mengubah baris tombol Streamlit menjadi D-Pad Silang di HP */
+        .mobile-dpad-style {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            grid-template-rows: repeat(3, auto) !important;
+            gap: 10px !important;
+            max-width: 280px !important;
+            margin: 20px auto !important; /* Membuat posisi D-pad pas di tengah layar HP */
+        }
+        
+        /* Memposisikan masing-masing tombol Streamlit ke grid D-Pad */
+        .mobile-dpad-style > div:nth-child(1) { grid-column: 2; grid-row: 1; } /* Atas */
+        .mobile-dpad-style > div:nth-child(2) { grid-column: 1; grid-row: 2; } /* Kiri */
+        .mobile-dpad-style > div:nth-child(3) { grid-column: 2; grid-row: 2; } /* Reset (di tengah) */
+        .mobile-dpad-style > div:nth-child(4) { grid-column: 3; grid-row: 2; } /* Kanan */
+        .mobile-dpad-style > div:nth-child(5) { grid-column: 2; grid-row: 3; } /* Bawah */
+        
+        /* Membuat tombol lebih bersahabat untuk sentuhan jari di HP */
+        .stButton>button {
+            height: 60px !important;
+            font-size: 1.1rem !important;
+        }
     }
 
-    /* Grid container menggunakan max-width agar tidak terlalu raksasa di desktop */
+    /* Grid container untuk ubin puzzle */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -41,7 +70,7 @@ st.markdown("""
         padding: 10px;
         border-radius: 10px;
         max-width: 340px;
-        margin: 0 auto; /* Supaya posisi puzzle pas di tengah-tengah layar */
+        margin: 0 auto;
     }
     /* Menggunakan aspect-ratio agar ubin selalu kotak sempurna */
     .tile {
@@ -73,10 +102,12 @@ st.markdown("""
         text-align: center;
         word-break: break-word;
     }
-    
-    /* Menyembunyikan tombol bawaan Streamlit untuk di-bridge oleh D-Pad Kustom */
-    .hidden-btn {
-        display: none !important;
+    /* Penyesuaian standar tombol desktop */
+    @media (min-width: 769px) {
+        .stButton>button {
+            padding: 0.5rem 0.2rem !important;
+            font-weight: bold !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -90,7 +121,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan D-Pad di bawah, Arrow Keys, atau tombol WASD untuk bermain!"
+    st.session_state.status_text_1 = "Gunakan tombol kontrol layar, Arrow Keys, atau tombol WASD untuk bermain!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -178,152 +209,27 @@ with col1:
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **D-Pad Layar:** Gunakan controller panah biru di bawah.")
+        st.markdown("• **Layar Ponsel & Laptop:** Gunakan tombol arah teks di bawah.")
+
+    st.write("")
     
-    # Tombol Python Asli Disembunyikan Menggunakan Div Ber-Class Khusus (Supaya Tetap Bisa Dipicu JS)
-    st.markdown('<div class="hidden-btn">', unsafe_allow_html=True)
-    st.button("🔼 Atas", on_click=tekan_Atas, key="real_up")
-    st.button("◀️ Kiri", on_click=tekan_Kiri, key="real_left")
-    st.button("🔄 Reset", on_click=aksi_tekan_Reset, key="real_reset")
-    st.button("▶️ Kanan", on_click=tekan_Kanan, key="real_right")
-    st.button("🔽 Bawah", on_click=tekan_Bawah, key="real_down")
+    # Bungkus baris tombol ini ke dalam satu container div HTML kustom
+    st.markdown('<div class="mobile-dpad-style">', unsafe_allow_html=True)
+    
+    # Kita tidak perlu lagi memisahkan ke dalam objek st.columns bawaan agar CSS Grid di HP bisa mengambil kendali penuh
+    st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_up")
+    st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True, key="btn_left")
+    st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_reset")
+    st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True, key="btn_right")
+    st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True, key="btn_down")
+    
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # ==========================================
-    # PEMBUATAN D-PAD GLOSSY KUSTOM (SESUAI GAMBAR)
-    # ==========================================
-    # HTML & CSS murni dipasang di sini untuk membentuk stick navigasi game silang transparan
-    components.html("""
-    <div class="dpad-wrapper">
-        <div class="dpad-container">
-            <button class="dpad-btn up" id="ui-up" title="Atas">
-                <svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
-            </button>
-            <button class="dpad-btn left" id="ui-left" title="Kiri">
-                <svg viewBox="0 0 24 24"><path d="M4 12l8-8v6h8v4h-8v6z"/></svg>
-            </button>
-            <button class="dpad-center" id="ui-reset" title="Reset">
-                <div class="inner-reset"></div>
-            </button>
-            <button class="dpad-btn right" id="ui-right" title="Kanan">
-                <svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6h-8v4h8v6z"/></svg>
-            </button>
-            <button class="dpad-btn down" id="ui-down" title="Bawah">
-                <svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6v-8h-4v8h-6z"/></svg>
-            </button>
-        </div>
-    </div>
-
-    <style>
-    .dpad-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px auto;
-        padding: 10px;
-    }
-    /* Membentuk layout silang menggunakan grid 3x3 */
-    .dpad-container {
-        display: grid;
-        grid-template-columns: repeat(3, 75px);
-        grid-template-rows: repeat(3, 75px);
-        gap: 2px;
-        background: rgba(30, 41, 59, 0.5);
-        padding: 12px;
-        border-radius: 50%;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
-    }
-    /* Style Tombol Panah (Sesuai dengan gambar gradasi biru mengkilap/glossy) */
-    .dpad-btn {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        border: 2px solid #1d4ed8;
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.1s ease;
-    }
-    .dpad-btn svg {
-        width: 40px;
-        height: 40px;
-        fill: #f8fafc;
-        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
-    }
-    /* Efek glossy memantul di bagian atas/ujung tombol */
-    .dpad-btn:after {
-        content: '';
-        position: absolute;
-        top: 2px; left: 2px; right: 2px; height: 40%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%);
-        pointer-events: none;
-    }
-    /* Memposisikan tiap bagian ubin silang */
-    .up { grid-column: 2; grid-row: 1; border-radius: 12px 12px 0 0; position: relative;}
-    .left { grid-column: 1; grid-row: 2; border-radius: 12px 0 0 12px; position: relative;}
-    .right { grid-column: 3; grid-row: 2; border-radius: 0 12px 12px 0; position: relative;}
-    .down { grid-column: 2; grid-row: 3; border-radius: 0 0 12px 12px; position: relative;}
-    
-    /* Tombol Reset di Tengah Lingkaran */
-    .dpad-center {
-        grid-column: 2;
-        grid-row: 2;
-        background: #1e293b;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
-    .inner-reset {
-        width: 32px;
-        height: 32px;
-        border: 3px solid #64748b;
-        border-radius: 50%;
-        background: transparent;
-        transition: all 0.2s;
-    }
-    /* Efek Interaksi saat tombol ditekan / active state */
-    .dpad-btn:active {
-        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-        transform: scale(0.95);
-        box-shadow: inset 0 4px 6px rgba(0,0,0,0.6);
-    }
-    .dpad-center:active .inner-reset {
-        border-color: #3b82f6;
-        transform: scale(0.9);
-    }
-    </style>
-
-    <script>
-    // Menghubungkan klik D-pad Kustom ke tombol asli Streamlit di Parent Window
-    const doc = window.parent.document;
-    
-    document.getElementById('ui-up').onclick = () => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔼 Atas'));
-        if(btn) btn.click();
-    };
-    document.getElementById('ui-left').onclick = () => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('◀️ Kiri'));
-        if(btn) btn.click();
-    };
-    document.getElementById('ui-right').onclick = () => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('▶️ Kanan'));
-        if(btn) btn.click();
-    };
-    document.getElementById('ui-down').onclick = () => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔽 Bawah'));
-        if(btn) btn.click();
-    };
-    document.getElementById('ui-reset').onclick = () => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔄 Reset'));
-        if(btn) btn.click();
-    };
-    </script>
-    """, height=290)
-
+    # Bagian Tombol AI Solver dipisah agar bisa disembunyikan khusus di HP menggunakan kelas CSS .ai-btn-container
+    st.markdown('<div class="ai-btn-container">', unsafe_allow_html=True)
     st.write("---")
-    st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
+    st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_bfs")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # KELOMPOK VISUALISASI MATRIKS PUZZLE
 with col2:
