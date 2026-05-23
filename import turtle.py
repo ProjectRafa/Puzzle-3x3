@@ -131,7 +131,7 @@ def aksi_tekan_BFS():
         curr, path = queue.popleft()
         if curr == GOAL_STATE:
             st.session_state.current_state = GOAL_STATE
-            st.session_state.status_text_1 = "🎉 AI RAFA Berhasil Menemukan Solusi! 🎉"
+            st.session_state.status_text_1 = "🎉 AI BFS Berhasil Menemukan Solusi! 🎉"
             return
         for tetangga, move in dapatkan_tetangga(curr):
             if tetangga not in visited:
@@ -144,12 +144,12 @@ def aksi_tekan_BFS():
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
-# PERBAIKAN DI SINI: Diberikan spasi bertingkat agar dikenali JavaScript secara instan lewat indeks array
+# Tombol jembatan kosong diidentifikasi via parameter key unik
 st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
-st.button(" ", on_click=geser_manual, args=('Atas',), key="p_move_up")
-st.button("  ", on_click=geser_manual, args=('Bawah',), key="p_move_down")
-st.button("   ", on_click=geser_manual, args=('Kiri',), key="p_move_left")
-st.button("    ", on_click=geser_manual, args=('Kanan',), key="p_move_right")
+st.button("", on_click=geser_manual, args=('Atas',), key="p_move_up")
+st.button("", on_click=geser_manual, args=('Bawah',), key="p_move_down")
+st.button("", on_click=geser_manual, args=('Kiri',), key="p_move_left")
+st.button("", on_click=geser_manual, args=('Kanan',), key="p_move_right")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Urutan kolom: col1 (Puzzle), col2 (D-Pad)
@@ -201,25 +201,28 @@ with col2:
         .dpad-btn:active { transform: scale(0.9); opacity: 0.8; }
     </style>
     <script>
-        // Menggunakan indeks urutan tombol (0=Atas, 1=Bawah, 2=Kiri, 3=Kanan) yang terbukti stabil & responsif
-        function pemicuAksi(indeks) {
-            const semuaTombol = window.parent.document.querySelectorAll('.hidden-control-container button');
-            if (semuaTombol && semuaTombol[indeks]) {
-                semuaTombol[indeks].click();
+        function pemicu(keyName) {
+            const btn = window.parent.document.querySelector(`button[key="${keyName}"]`);
+            if (btn) {
+                btn.click();
+            } else {
+                const semuaTombol = window.parent.document.querySelectorAll('.hidden-control-container button');
+                const urutan = {'p_move_up': 0, 'p_move_down': 1, 'p_move_left': 2, 'p_move_right': 3};
+                if(semuaTombol.length > 0) semuaTombol[urutan[keyName]].click();
             }
         }
         
-        document.getElementById('ui-up').onclick = () => pemicuAksi(0);
-        document.getElementById('ui-down').onclick = () => pemicuAksi(1);
-        document.getElementById('ui-left').onclick = () => pemicuAksi(2);
-        document.getElementById('ui-right').onclick = () => pemicuAksi(3);
+        document.getElementById('ui-up').onclick = () => pemicu('p_move_up');
+        document.getElementById('ui-down').onclick = () => pemicu('p_move_down');
+        document.getElementById('ui-left').onclick = () => pemicu('p_move_left');
+        document.getElementById('ui-right').onclick = () => pemicu('p_move_right');
         
         window.parent.document.onkeydown = function(e) {
             let k = e.key.toLowerCase();
-            if (k === 'arrowup' || k === 'w') { e.preventDefault(); pemicuAksi(0); }
-            if (k === 'arrowdown' || k === 's') { e.preventDefault(); pemicuAksi(1); }
-            if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pemicuAksi(2); }
-            if (k === 'arrowright' || k === 'd') { e.preventDefault(); pemicuAksi(3); }
+            if (k === 'arrowup' || k === 'w') { e.preventDefault(); pemicu('p_move_up'); }
+            if (k === 'arrowdown' || k === 's') { e.preventDefault(); pemicu('p_move_down'); }
+            if (k === 'arrowleft' || k === 'a') { e.preventDefault(); pemicu('p_move_left'); }
+            if (k === 'arrowright' || k === 'd') { e.preventDefault(); pemicu('p_move_right'); }
         };
     </script>
     """, height=260)
@@ -227,7 +230,7 @@ with col2:
     st.write("")
     c1, c2 = st.columns(2)
     with c1: st.button("🔄 RESET", on_click=aksi_tekan_Reset, use_container_width=True)
-    with c2: st.button("🤖 AI RAFA", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
+    with c2: st.button("🤖 AI BFS", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
 
 # Status
 st.write("---")
