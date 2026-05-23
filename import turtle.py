@@ -22,6 +22,15 @@ st.markdown("""
         background-color: #0F172A;
         color: #E2E8F0;
     }
+    
+    /* TRICK UTAMA UNTUK HP: Memaksa susunan kolom Streamlit patuh dari atas ke bawah */
+    @media (max-width: 768px) {
+        [data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: column-reverse !important; /* Membalik urutan agar col2 (puzzle) di atas col1 (tombol) */
+        }
+    }
+
     /* Grid container menggunakan max-width agar tidak terlalu raksasa di desktop */
     .tile-container {
         display: grid;
@@ -162,27 +171,10 @@ def aksi_tekan_BFS():
 st.title("🧩 8-Puzzle BFS Solver")
 st.write("---")
 
-# Menginisialisasi dua kolom (Kiri untuk tombol kontrol, Kanan untuk visual matriks di Desktop)
+# Menginisialisasi dua kolom berdampingan
 col1, col2 = st.columns([1, 1], gap="large")
 
-# --- SEKARANG DIRENDER PERTAMA: MATRIKS GRAFIS PUZZLE ---
-# (Di Desktop berada di kanan, di HP otomatis naik ke posisi paling atas)
-with col2:
-    st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>TAMPILAN PUZZLE</h3>", unsafe_allow_html=True)
-    
-    html_matriks = "<div class='tile-container'>"
-    for angka in st.session_state.current_state:
-        if angka == 0:
-            html_matriks += "<div class='tile-empty'></div>"
-        else:
-            html_matriks += f"<div class='tile'>{angka}</div>"
-    html_matriks += "</div>"
-    
-    st.markdown(html_matriks, unsafe_allow_html=True)
-    st.write("")
-
-# --- DIRENDER KEDUA: PANDUAN & KONTROL MANUAL ---
-# (Di Desktop berada di kiri, di HP otomatis turun di bawah Puzzle)
+# KELOMPOK KONTROL MANUAL & PANDUAN
 with col1:
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
@@ -208,6 +200,21 @@ with col1:
     
     st.write("---")
     st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True)
+
+# KELOMPOK VISUALISASI MATRIKS PUZZLE
+with col2:
+    st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>TAMPILAN PUZZLE</h3>", unsafe_allow_html=True)
+    
+    html_matriks = "<div class='tile-container'>"
+    for angka in st.session_state.current_state:
+        if angka == 0:
+            html_matriks += "<div class='tile-empty'></div>"
+        else:
+            html_matriks += f"<div class='tile'>{angka}</div>"
+    html_matriks += "</div>"
+    
+    st.markdown(html_matriks, unsafe_allow_html=True)
+    st.write("")
 
 # ==========================================
 # 6. STATUS BAWAH
