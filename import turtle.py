@@ -5,7 +5,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF & MODEL D-PAD BARU
+# 1. STYLE CSS RESPONSIF & D-PAD MODEL LINGKARAN
 # ==========================================
 st.markdown("""
     <style>
@@ -27,55 +27,72 @@ st.markdown("""
         }
     }
 
-    /* CONTAINER D-PAD MODEL BARU (CSS GRID) */
-    .dpad-grid-container {
-        display: grid;
-        grid-template-columns: repeat(3, 75px);
-        grid-template-rows: repeat(3, 75px);
-        gap: 6px;
-        justify-content: center;
-        align-content: center;
-        margin: 20px auto;
-        background: rgba(30, 41, 59, 0.4);
-        padding: 15px;
-        border-radius: 50%;
-        max-width: 260px;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
-    }
-    
-    /* Memaksa Tombol Streamlit Menjadi Bagian dari D-Pad Silang */
-    .dpad-grid-container div[data-testid="stButton"] {
+    /* CONTAINER UTAMA D-PAD BULAT MEMBULAT */
+    .dpad-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
+        margin: 15px auto;
+    }
+    
+    .dpad-circle-container {
+        display: grid;
+        grid-template-columns: repeat(3, 75px);
+        grid-template-rows: repeat(3, 75px);
+        gap: 2px;
+        background: rgba(30, 41, 59, 0.5);
+        padding: 12px;
+        border-radius: 50%;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+        width: 249px;
+        height: 249px;
+    }
+    
+    /* Sinkronisasi Tombol Streamlit ke dalam Grid Bulat */
+    .dpad-circle-container div[data-testid="stButton"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
         margin: 0 !important;
         padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
     }
-    .dpad-grid-container button {
+    
+    .dpad-circle-container button {
         width: 100% !important;
         height: 100% !important;
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
         color: #f8fafc !important;
         border: 2px solid #1d4ed8 !important;
-        font-size: 1.4rem !important;
+        font-size: 1.5rem !important;
         font-weight: bold !important;
-        border-radius: 12px !important;
         box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.3) !important;
         transition: all 0.1s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    .dpad-grid-container button:active {
+    
+    .dpad-circle-container button:active {
         background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
         transform: scale(0.95) !important;
     }
     
-    /* Penempatan Grid Silang */
-    .dpad-up { grid-column: 2; grid-row: 1; }
-    .dpad-left { grid-column: 1; grid-row: 2; }
-    .dpad-center-space { grid-column: 2; grid-row: 2; background: #1e293b; border-radius: 8px; }
-    .dpad-right { grid-column: 3; grid-row: 2; }
-    .dpad-down { grid-column: 2; grid-row: 3; }
+    /* Pemotongan Sudut Tombol Mengikuti Lengkungan Lingkaran */
+    .dpad-up-btn button { border-radius: 14px 14px 0 0 !important; }
+    .dpad-left-btn button { border-radius: 14px 0 0 14px !important; }
+    .dpad-right-btn button { border-radius: 0 14px 14px 0 !important; }
+    .dpad-down-btn button { border-radius: 0 0 14px 14px !important; }
 
-    /* STYLE MATRIKS PUZZLE */
+    /* Posisi Penempatan Sektor Silang */
+    .dpad-up-btn { grid-column: 2; grid-row: 1; }
+    .dpad-left-btn { grid-column: 1; grid-row: 2; }
+    .dpad-center-space { grid-column: 2; grid-row: 2; background: #1e293b; border: none; }
+    .dpad-right-btn { grid-column: 3; grid-row: 2; }
+    .dpad-down-btn { grid-column: 2; grid-row: 3; }
+
+    /* STYLE MATRIKS PUZZLE (KANAN) */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -132,7 +149,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan D-Pad asli di layar atau tekan tombol kontrol Anda!"
+    st.session_state.status_text_1 = "Gunakan D-Pad Bulat di layar, Arrow Keys, atau tombol WASD untuk bermain!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -202,7 +219,6 @@ def aksi_tekan_BFS():
 # ==========================================
 # 4. KONTROL DESKTOP KEYBOARD (WASD & ARROWS)
 # ==========================================
-# Script ultra-ringan khusus menangkap ketukan keyboard tanpa memakan resource halaman luar
 st.components.v1.html("""
     <script>
     window.parent.document.onkeydown = function(e) {
@@ -234,29 +250,30 @@ col1, col2 = st.columns([1, 1], gap="large")
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
     # ----------------------------------------------------
-    # MODEL BARU: D-PAD NYATA BERBASIS TOMBOL PYTHON
+    # MODEL LINGKARAN PENUH: BERBASIS TOMBOL PYTHON MURNI
     # ----------------------------------------------------
-    # Struktur visual luar tidak berubah, namun tombol ini dijamin 100% responsif karena diproses murni oleh Python
-    st.markdown('<div class="dpad-grid-container">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-circle-container">', unsafe_allow_html=True)
     
-    st.markdown('<div class="dpad-up">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-up-btn">', unsafe_allow_html=True)
     st.button("▲", on_click=geser_manual, args=('Atas',), key="btn_p_up")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="dpad-left">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-left-btn">', unsafe_allow_html=True)
     st.button("◀", on_click=geser_manual, args=('Kiri',), key="btn_p_left")
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="dpad-center-space"></div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="dpad-right">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-right-btn">', unsafe_allow_html=True)
     st.button("▶", on_click=geser_manual, args=('Kanan',), key="btn_p_right")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="dpad-down">', unsafe_allow_html=True)
+    st.markdown('<div class="dpad-down-btn">', unsafe_allow_html=True)
     st.button("▼", on_click=geser_manual, args=('Bawah',), key="btn_p_down")
     st.markdown('</div>', unsafe_allow_html=True)
     
+    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("---")
