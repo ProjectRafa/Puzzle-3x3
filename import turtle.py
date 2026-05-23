@@ -6,7 +6,7 @@ from collections import deque
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF
+# 1. STYLE CSS RESPONSIF & PENYEMBUNYIAN TOMBOL JEMBATAN
 # ==========================================
 st.markdown("""
     <style>
@@ -28,9 +28,15 @@ st.markdown("""
         }
     }
 
-    /* Sembunyikan input jembatan agar tidak merusak tampilan visual luar */
-    div[data-testid="stTextInput"] {
-        display: none !important;
+    /* MENYEMBUNYIKAN TOMBOL KONTROL ASLI SECARA TOTAL */
+    /* Tombol tetap ada di sistem agar bisa diklik JavaScript, tapi tidak terlihat oleh mata */
+    .hidden-control-container {
+        position: absolute;
+        width: 0px;
+        height: 0px;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
     }
 
     .tile-container {
@@ -167,19 +173,19 @@ col1, col2 = st.columns([1, 1], gap="large")
 # KELOMPOK KONTROL MANUAL (KIRI)
 with col1:
     
-    # Jembatan input teks asli Streamlit (disembunyikan oleh CSS di atas)
-    gerakan_keyboard = st.text_input(label="Input Kontrol Sembunyi", value="", key="input_kontrol_rahasia")
-    
-    # Jika ada nilai masuk dari interaksi HTML D-Pad, eksekusi fungsinya
-    if gerakan_keyboard:
-        geser_manual(gerakan_keyboard)
-        # Reset isi input agar bisa menerima ketukan tombol berulang yang sama
-        st.rerun()
+    # ----------------------------------------------------
+    # TOMBOL JEMBATAN ASLI STREAMLIT (DISEMBUNYIKAN SECARA TOTAL)
+    # ----------------------------------------------------
+    st.markdown('<div class="hidden-control-container">', unsafe_allow_html=True)
+    st.button("HIDDEN_UP", on_click=geser_manual, args=('Atas',), key="h_up")
+    st.button("HIDDEN_DOWN", on_click=geser_manual, args=('Bawah',), key="h_down")
+    st.button("HIDDEN_LEFT", on_click=geser_manual, args=('Kiri',), key="h_left")
+    st.button("HIDDEN_RIGHT", on_click=geser_manual, args=('Kanan',), key="h_right")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ----------------------------------------------------
     # MODEL D-PAD LINGKARAN MURNI (HTML / SVG)
     # ----------------------------------------------------
-    # Dijamin lingkaran rapi dan presisi di HP maupun Laptop
     components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
@@ -220,38 +226,29 @@ with col1:
     </style>
 
     <script>
-    // Fungsi jembatan untuk mengisi nilai langsung ke komponen input bawaan Streamlit luar
-    function kirimAksi(arah) {
-        const inputs = window.parent.document.querySelectorAll('input[data-testid="stTextInputRootElement"]');
-        if (inputs.length > 0) {
-            const inputUtama = inputs[0];
-            
-            // Set nilai input simulasi asli peramban agar dikenali sistem Streamlit
-            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-            nativeInputValueSetter.call(inputUtama, arah);
-
-            // Memicu event perubahan ke backend Python secara paksa
-            const ev = new Event('input', { bubbles: true });
-            inputUtama.dispatchEvent(ev);
-            
-            // Lakukan simulasi menekan enter agar Streamlit memproses data secepat kilat
-            const evEnter = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', keyCode: 13 });
-            inputUtama.dispatchEvent(evEnter);
+    // Fungsi pencari tombol tersembunyi berdasarkan teks isinya (Sangat Akurat)
+    function pemicuTombolAsli(namaTombol) {
+        const semuaTombol = window.parent.document.querySelectorAll('button');
+        for (let btn of semuaTombol) {
+            if (btn.innerText && btn.innerText.trim() === namaTombol) {
+                btn.click();
+                break;
+            }
         }
     }
 
-    document.getElementById('ui-up').onclick = () => kirimAksi('Atas');
-    document.getElementById('ui-left').onclick = () => kirimAksi('Kiri');
-    document.getElementById('ui-right').onclick = () => kirimAksi('Kanan');
-    document.getElementById('ui-down').onclick = () => kirimAksi('Bawah');
+    document.getElementById('ui-up').onclick = () => pemicuTombolAsli('HIDDEN_UP');
+    document.getElementById('ui-down').onclick = () => pemicuTombolAsli('HIDDEN_DOWN');
+    document.getElementById('ui-left').onclick = () => pemicuTombolAsli('HIDDEN_LEFT');
+    document.getElementById('ui-right').onclick = () => pemicuTombolAsli('HIDDEN_RIGHT');
 
     // Menangkap kontrol Keyboard Desktop (WASD & Panah)
     window.parent.document.onkeydown = function(e) {
         let key = e.key.toLowerCase();
-        if (key === 'arrowup' || key === 'w') { e.preventDefault(); kirimAksi('Atas'); }
-        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); kirimAksi('Bawah'); }
-        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); kirimAksi('Kiri'); }
-        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); kirimAksi('Kanan'); }
+        if (key === 'arrowup' || key === 'w') { e.preventDefault(); pemicuTombolAsli('HIDDEN_UP'); }
+        else if (key === 'arrowdown' || key === 's') { e.preventDefault(); pemicuTombolAsli('HIDDEN_DOWN'); }
+        else if (key === 'arrowleft' || key === 'a') { e.preventDefault(); pemicuTombolAsli('HIDDEN_LEFT'); }
+        else if (key === 'arrowright' || key === 'd') { e.preventDefault(); pemicuTombolAsli('HIDDEN_RIGHT'); }
     };
     </script>
     """, height=290)
