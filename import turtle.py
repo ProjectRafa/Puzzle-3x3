@@ -193,6 +193,9 @@ with col1:
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
         st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di bawah.")
+        st.write("---")
+        st.markdown("### MISI:")
+        st.markdown("• **Susunlah menjadi angka yang berurut** (1 sampai 8, dengan kotak kosong di akhir).")
         
     st.write("")
 
