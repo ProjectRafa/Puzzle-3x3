@@ -7,11 +7,11 @@ import time
 st.set_page_config(layout="wide", page_title="8-Sliding Puzzle 3x3 - BFS Solver")
 
 # ==========================================
-# 1. STYLE CSS RESPONSIF (ADAPTIF HP & DESKTOP)
+# 1. STYLE CSS RESPONSIF
 # ==========================================
 st.markdown("""
     <style>
-    /* Mengurangi padding bawaan streamlit di HP agar hemat ruang */
+    /* Mengurangi padding bawaan streamlit agar hemat ruang */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
@@ -23,42 +23,15 @@ st.markdown("""
         color: #E2E8F0;
     }
     
-    /* ==========================================
-       TRICK UTAMA UNTUK LAYOUT HP (SCREEN MOBILE)
-       ========================================== */
+    /* Layout adaptif untuk HP */
     @media (max-width: 768px) {
         [data-testid="stHorizontalBlock"] {
             display: flex !important;
-            flex-direction: column-reverse !important; /* Membalik urutan agar puzzle berada di atas */
-        }
-        
-        /* SEMBUNYIKAN TOTAL KONTROL DESKTOP (Tombol Grid & Tombol AI) SAAT DI HP */
-        .desktop-controls {
-            display: none !important;
-        }
-        
-        /* Pastikan D-Pad HTML bawaan kode Anda tampil sempurna di HP */
-        .mobile-dpad {
-            display: block !important;
-            margin-top: 10px !important;
+            flex-direction: column-reverse !important; /* Membalik urutan agar puzzle di atas tombol */
         }
     }
 
-    /* ==========================================
-       TRICK UTAMA UNTUK LAYOUT DESKTOP
-       ========================================== */
-    @media (min-width: 769px) {
-        /* Tampilkan tombol asli & AI Solver saat di Desktop */
-        .desktop-controls {
-            display: block !important;
-        }
-        /* Sembunyikan D-Pad HTML kustom saat di Desktop */
-        .mobile-dpad {
-            display: none !important;
-        }
-    }
-
-    /* Grid container menggunakan max-width agar tidak terlalu raksasa di desktop */
+    /* Grid container untuk matriks puzzle */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -100,10 +73,14 @@ st.markdown("""
         text-align: center;
         word-break: break-word;
     }
-    /* Penyesuaian khusus tombol agar tebal di Desktop */
+    /* Style tombol AI agar pas di container */
     .stButton>button {
         padding: 0.5rem 0.2rem !important;
         font-weight: bold !important;
+    }
+    /* Sembunyikan tombol trigger tak terlihat */
+    .hidden-btn {
+        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -117,7 +94,7 @@ INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
 if 'status_text_1' not in st.session_state:
-    st.session_state.status_text_1 = "Gunakan tombol kontrol layar, Arrow Keys, atau tombol WASD untuk bermain!"
+    st.session_state.status_text_1 = "Gunakan D-Pad di layar, Arrow Keys, atau tombol WASD untuk bermain!"
 if 'status_text_2' not in st.session_state:
     st.session_state.status_text_2 = ""
 
@@ -205,35 +182,21 @@ with col1:
     with st.expander("ℹ️ Lihat Panduan Kontrol Game", expanded=False):
         st.markdown("### KONTROL GAME:")
         st.markdown("• **Tombol Keyboard:** Gunakan **Panah (Arrow Keys)** atau **W, A, S, D**")
-        st.markdown("• **Layar Ponsel:** Gunakan controller murni D-Pad di bawah.")
-        st.markdown("• **Layar Laptop:** Gunakan tombol grid abu-abu asli + Fitur AI BFS Solver.")
+        st.markdown("• **Layar Sentuh/Mouse:** Gunakan D-Pad murni di bawah.")
 
-    # ----------------------------------------------------
-    # TAMPILAN DESKTOP (Grid 3 Kolom + Tombol AI)
-    # ----------------------------------------------------
-    # Seluruh komponen ini dimasukkan ke dalam div kelas .desktop-controls
-    # Kelas ini akan di-hide (display: none) secara total saat dibuka di HP
-    st.markdown('<div class="desktop-controls">', unsafe_allow_html=True)
     st.write("")
-    cc1, cc2, cc3 = st.columns([1,1,1])
-    with cc2: st.button("🔼 Atas", on_click=tekan_Atas, use_container_width=True, key="btn_dt_up")
-    
-    cc4, cc5, cc6 = st.columns([1,1,1])
-    with cc4: st.button("◀️ Kiri", on_click=tekan_Kiri, use_container_width=True, key="btn_dt_left")
-    with cc5: st.button("🔄 Reset", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
-    with cc6: st.button("▶️ Kanan", on_click=tekan_Kanan, use_container_width=True, key="btn_dt_right")
-    
-    cc7, cc8, cc9 = st.columns([1,1,1])
-    with cc8: st.button("🔽 Bawah", on_click=tekan_Bawah, use_container_width=True, key="btn_dt_down")
-    
-    st.write("---")
-    st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
+
+    # Tombol backend Streamlit disembunyikan lewat CSS (.hidden-btn) agar D-Pad HTML bisa memicu fungsi Python
+    st.markdown('<div class="hidden-btn">', unsafe_allow_html=True)
+    st.button("TriggerAtas", on_click=tekan_Atas, key="hidden_up")
+    st.button("TriggerKiri", on_click=tekan_Kiri, key="hidden_left")
+    st.button("TriggerKanan", on_click=tekan_Kanan, key="hidden_right")
+    st.button("TriggerBawah", on_click=tekan_Bawah, key="hidden_down")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # TAMPILAN HP (HANYA STRUKTUR D-PAD HTML KUSTOM ANDA)
+    # TAMPILAN MURNI D-PAD SILANG (HTML / SVG)
     # ----------------------------------------------------
-    st.markdown('<div class="mobile-dpad">', unsafe_allow_html=True)
     components.html("""
     <div class="dpad-wrapper">
         <div class="dpad-container">
@@ -276,16 +239,21 @@ with col1:
     <script>
     const doc = window.parent.document;
     const triggerClick = (text) => {
-        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes(text));
+        const btn = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === text);
         if(btn) btn.click();
     };
-    document.getElementById('ui-up').onclick = () => triggerClick('🔼 Atas');
-    document.getElementById('ui-left').onclick = () => triggerClick('◀️ Kiri');
-    document.getElementById('ui-right').onclick = () => triggerClick('▶️ Kanan');
-    document.getElementById('ui-down').onclick = () => triggerClick('🔽 Bawah');
+    document.getElementById('ui-up').onclick = () => triggerClick('TriggerAtas');
+    document.getElementById('ui-left').onclick = () => triggerClick('TriggerKiri');
+    document.getElementById('ui-right').onclick = () => triggerClick('TriggerKanan');
+    document.getElementById('ui-down').onclick = () => triggerClick('TriggerBawah');
     </script>
     """, height=290)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.write("---")
+    # Tombol Reset & AI Solver diletakkan rapi di bawah D-Pad kustom Anda
+    cc_bt1, cc_bt2 = st.columns(2)
+    with cc_bt1: st.button("🔄 RESET GAME", on_click=aksi_tekan_Reset, use_container_width=True, key="btn_dt_reset")
+    with cc_bt2: st.button("🤖 JALANKAN AI BFS SOLVER", on_click=aksi_tekan_BFS, type="primary", use_container_width=True, key="btn_dt_bfs")
 
 # KELOMPOK VISUALISASI MATRIKS PUZZLE
 with col2:
@@ -321,13 +289,13 @@ components.html("""
         let targetButton = null;
 
         if (key === 'arrowup' || key === 'w') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔼 Atas'));
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerAtas');
         } else if (key === 'arrowdown' || key === 's') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('🔽 Bawah'));
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerBawah');
         } else if (key === 'arrowleft' || key === 'a') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('◀️ Kiri'));
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerKiri');
         } else if (key === 'arrowright' || key === 'd') {
-            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.includes('▶️ Kanan'));
+            targetButton = Array.from(doc.querySelectorAll('button')).find(el => el.innerText.trim() === 'TriggerKanan');
         }
 
         if (targetButton) {
