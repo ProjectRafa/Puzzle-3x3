@@ -94,7 +94,7 @@ st.markdown("""
 # 2. KONFIGURASI STATE PUZZLE & SESSION STATE
 # ==========================================
 GOAL_STATE = (1, 2, 3, 4, 5, 6, 7, 8, 0)
-INITIAL_STATE = (1, 3, 4, 8, 6, 2, 7, 0, 5)
+INITIAL_STATE = (3, 1, 4, 8, 6, 2, 7, 0, 5)
 
 if 'current_state' not in st.session_state:
     st.session_state.current_state = INITIAL_STATE
